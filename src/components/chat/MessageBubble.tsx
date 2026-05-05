@@ -1,11 +1,20 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Sparkles, User } from "lucide-react";
+import { RotateCcw, User } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChat";
+import logoUrl from "@/assets/aura-logo.webp";
 
-export function MessageBubble({ message }: { message: ChatMessage }) {
+interface Props {
+  message: ChatMessage;
+  onRegenerate?: (id: string) => void;
+  canRegenerate?: boolean;
+}
+
+export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
   const isUser = message.role === "user";
+  const showRegen =
+    !isUser && !message.pending && canRegenerate && onRegenerate;
 
   return (
     <motion.div
@@ -15,9 +24,9 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
       className={`flex w-full gap-3 ${isUser ? "justify-end" : "justify-start"}`}
     >
       {!isUser && (
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-             style={{ background: "var(--gradient-aurora)", boxShadow: "var(--shadow-glow)" }}>
-          <Sparkles className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card"
+             style={{ boxShadow: "var(--shadow-glow)" }}>
+          <img src={logoUrl} alt="Aura" className="h-full w-full object-contain p-0.5" />
         </div>
       )}
 
@@ -92,6 +101,17 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
             className="max-h-[420px] rounded-2xl border border-border object-cover"
             style={{ boxShadow: "var(--shadow-glow)" }}
           />
+        )}
+
+        {showRegen && (
+          <button
+            onClick={() => onRegenerate!(message.id)}
+            className="mt-0.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            title="Regenerate response"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Regenerate
+          </button>
         )}
       </div>
 

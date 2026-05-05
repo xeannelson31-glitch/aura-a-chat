@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export type ChatRole = "user" | "assistant";
@@ -10,18 +10,19 @@ export type ChatPart =
 export interface ChatMessage {
   id: string;
   role: ChatRole;
-  // For UI: a string for assistant text, or an array of parts (user with images)
   content: string | ChatPart[];
-  // Generated image attached to an assistant reply
   generatedImage?: string;
   pending?: boolean;
+  // Track which model produced this assistant message and whether image was forced
+  model?: string;
+  forcedImage?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const STORAGE_KEY = "aura-chat-history-v1";
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-// Strip generated images & convert UI messages to gateway-compatible payload
 function toGatewayMessages(messages: ChatMessage[]) {
   return messages.map((m) => {
     if (typeof m.content === "string") {
@@ -38,7 +39,6 @@ function toGatewayMessages(messages: ChatMessage[]) {
   });
 }
 
-// Heuristic: should we route to image generation?
 function looksLikeImageRequest(text: string) {
   const t = text.toLowerCase().trim();
   return /^(\/(image|img|generate)\b|generate (an? )?image|create (an? )?image|draw (me )?(an? )?|make (an? )?(image|picture|illustration)|picture of|illustration of|render (an? )?image)/.test(
@@ -46,10 +46,32 @@ function looksLikeImageRequest(text: string) {
   );
 }
 
+function loadInitial(): ChatMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    // Drop any pending state on rehydrate
+    return parsed.map((m) => ({ ...m, pending: false }));
+  } catch {
+    return [];
+  }
+}
+
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadInitial);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Persist on every change (skip while streaming pending dots? still fine)
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch {
+      /* quota exceeded — ignore */
+    }
+  }, [messages]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -60,39 +82,50 @@ export function useChat() {
   const reset = useCallback(() => {
     stop();
     setMessages([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }, [stop]);
 
-  const send = useCallback(
+  // Internal: run a request given an explicit history + user message
+  const runRequest = useCallback(
     async (
-      input: string,
-      opts: { images?: string[]; model: string; forceImage?: boolean },
+      history: ChatMessage[],
+      userMsg: ChatMessage,
+      opts: { model: string; forceImage?: boolean },
     ) => {
-      const text = input.trim();
-      const { images = [], model, forceImage } = opts;
-      if (!text && images.length === 0) return;
+      const { model, forceImage } = opts;
+      const userText =
+        typeof userMsg.content === "string"
+          ? userMsg.content
+          : userMsg.content
+              .filter((p) => p.type === "text")
+              .map((p) => (p as { text: string }).text)
+              .join("\n");
+      const userImageCount =
+        typeof userMsg.content === "string"
+          ? 0
+          : userMsg.content.filter((p) => p.type === "image_url").length;
 
-      const userParts: ChatPart[] = [];
-      if (text) userParts.push({ type: "text", text });
-      for (const url of images) userParts.push({ type: "image_url", image_url: { url } });
-
-      const userMsg: ChatMessage = {
-        id: uid(),
-        role: "user",
-        content: images.length > 0 ? userParts : text,
-      };
-
-      // snapshot history BEFORE adding the user message
-      const history = messages;
-      setMessages((prev) => [...prev, userMsg]);
-
-      const wantImage = forceImage || (images.length === 0 && looksLikeImageRequest(text));
+      const wantImage =
+        forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
 
       // ---- Image generation branch ----
       if (wantImage) {
         const placeholderId = uid();
-        setMessages((prev) => [
-          ...prev,
-          { id: placeholderId, role: "assistant", content: "Creating your image…", pending: true },
+        setMessages([
+          ...history,
+          userMsg,
+          {
+            id: placeholderId,
+            role: "assistant",
+            content: "Creating your image…",
+            pending: true,
+            model,
+            forcedImage: true,
+          },
         ]);
         setIsStreaming(true);
 
@@ -140,9 +173,10 @@ export function useChat() {
 
       // ---- Streaming text branch ----
       const assistantId = uid();
-      setMessages((prev) => [
-        ...prev,
-        { id: assistantId, role: "assistant", content: "", pending: true },
+      setMessages([
+        ...history,
+        userMsg,
+        { id: assistantId, role: "assistant", content: "", pending: true, model },
       ]);
       setIsStreaming(true);
 
@@ -205,14 +239,12 @@ export function useChat() {
                 );
               }
             } catch {
-              // partial JSON across chunks
               buffer = line + "\n" + buffer;
               break;
             }
           }
         }
 
-        // flush
         if (buffer.trim()) {
           for (let raw of buffer.split("\n")) {
             if (raw.endsWith("\r")) raw = raw.slice(0, -1);
@@ -266,8 +298,55 @@ export function useChat() {
         abortRef.current = null;
       }
     },
-    [messages],
+    [],
   );
 
-  return { messages, isStreaming, send, stop, reset };
+  const send = useCallback(
+    async (
+      input: string,
+      opts: { images?: string[]; model: string; forceImage?: boolean },
+    ) => {
+      const text = input.trim();
+      const { images = [], model, forceImage } = opts;
+      if (!text && images.length === 0) return;
+
+      const userParts: ChatPart[] = [];
+      if (text) userParts.push({ type: "text", text });
+      for (const url of images) userParts.push({ type: "image_url", image_url: { url } });
+
+      const userMsg: ChatMessage = {
+        id: uid(),
+        role: "user",
+        content: images.length > 0 ? userParts : text,
+      };
+
+      await runRequest(messages, userMsg, { model, forceImage });
+    },
+    [messages, runRequest],
+  );
+
+  // Regenerate: re-run the last user message, dropping the assistant reply that followed it
+  const regenerate = useCallback(
+    async (assistantId: string, modelOverride?: string) => {
+      if (isStreaming) return;
+      const idx = messages.findIndex((m) => m.id === assistantId);
+      if (idx <= 0) return;
+      const target = messages[idx];
+      // Find the most recent user message before this assistant message
+      let userIdx = idx - 1;
+      while (userIdx >= 0 && messages[userIdx].role !== "user") userIdx--;
+      if (userIdx < 0) return;
+
+      const history = messages.slice(0, userIdx);
+      const userMsg = messages[userIdx];
+      const model = modelOverride || target.model || "google/gemini-3-flash-preview";
+      await runRequest(history, userMsg, {
+        model,
+        forceImage: target.forcedImage,
+      });
+    },
+    [messages, isStreaming, runRequest],
+  );
+
+  return { messages, isStreaming, send, stop, reset, regenerate };
 }
