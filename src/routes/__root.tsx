@@ -29,14 +29,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Aura AI Chat" },
+      { name: "description", content: "Aura AI Chat is an intelligent conversational platform designed to provide quick, helpful, and natural interactions. It assists users with answering questions," },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Aura AI Chat" },
+      { property: "og:description", content: "Aura AI Chat is an intelligent conversational platform designed to provide quick, helpful, and natural interactions. It assists users with answering questions," },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Aura AI Chat" },
+      { name: "twitter:description", content: "Aura AI Chat is an intelligent conversational platform designed to provide quick, helpful, and natural interactions. It assists users with answering questions," },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/1388c420-6d19-47c5-bfe0-8212cf214bf4" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/1388c420-6d19-47c5-bfe0-8212cf214bf4" },
     ],
     links: [
       {
