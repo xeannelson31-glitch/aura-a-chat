@@ -24,9 +24,9 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
       className={`flex w-full gap-3 ${isUser ? "justify-end" : "justify-start"}`}
     >
       {!isUser && (
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-             style={{ background: "var(--gradient-aurora)", boxShadow: "var(--shadow-glow)" }}>
-          <Sparkles className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card"
+             style={{ boxShadow: "var(--shadow-glow)" }}>
+          <img src={logoUrl} alt="Aura" className="h-full w-full object-contain p-0.5" />
         </div>
       )}
 
