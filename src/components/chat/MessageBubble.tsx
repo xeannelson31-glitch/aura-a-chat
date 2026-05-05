@@ -1,11 +1,20 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Sparkles, User } from "lucide-react";
+import { RotateCcw, User } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChat";
+import logoUrl from "@/assets/aura-logo.webp";
 
-export function MessageBubble({ message }: { message: ChatMessage }) {
+interface Props {
+  message: ChatMessage;
+  onRegenerate?: (id: string) => void;
+  canRegenerate?: boolean;
+}
+
+export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
   const isUser = message.role === "user";
+  const showRegen =
+    !isUser && !message.pending && canRegenerate && onRegenerate;
 
   return (
     <motion.div
