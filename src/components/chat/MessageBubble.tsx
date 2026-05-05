@@ -102,6 +102,17 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             style={{ boxShadow: "var(--shadow-glow)" }}
           />
         )}
+
+        {showRegen && (
+          <button
+            onClick={() => onRegenerate!(message.id)}
+            className="mt-0.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            title="Regenerate response"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Regenerate
+          </button>
+        )}
       </div>
 
       {isUser && (
