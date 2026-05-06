@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export type ChatRole = "user" | "assistant";
@@ -19,7 +19,6 @@ export interface ChatMessage {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const STORAGE_KEY = "aura-chat-history-v1";
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -46,48 +45,23 @@ function looksLikeImageRequest(text: string) {
   );
 }
 
-function loadInitial(): ChatMessage[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ChatMessage[];
-    // Drop any pending state on rehydrate
-    return parsed.map((m) => ({ ...m, pending: false }));
-  } catch {
-    return [];
-  }
+interface UseChatArgs {
+  messages: ChatMessage[];
+  setMessages: (updater: (prev: ChatMessage[]) => ChatMessage[]) => void;
 }
 
-export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>(loadInitial);
+export function useChat({ messages, setMessages }: UseChatArgs) {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-
-  // Persist on every change (skip while streaming pending dots? still fine)
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch {
-      /* quota exceeded — ignore */
-    }
-  }, [messages]);
+  // Latest messages snapshot for callbacks that need it without re-creating
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     setIsStreaming(false);
   }, []);
-
-  const reset = useCallback(() => {
-    stop();
-    setMessages([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, [stop]);
 
   // Internal: run a request given an explicit history + user message
   const runRequest = useCallback(
@@ -115,7 +89,7 @@ export function useChat() {
       // ---- Image generation branch ----
       if (wantImage) {
         const placeholderId = uid();
-        setMessages([
+        setMessages(() => [
           ...history,
           userMsg,
           {
@@ -173,7 +147,7 @@ export function useChat() {
 
       // ---- Streaming text branch ----
       const assistantId = uid();
-      setMessages([
+      setMessages(() => [
         ...history,
         userMsg,
         { id: assistantId, role: "assistant", content: "", pending: true, model },
@@ -298,7 +272,7 @@ export function useChat() {
         abortRef.current = null;
       }
     },
-    [],
+    [setMessages],
   );
 
   const send = useCallback(
@@ -320,33 +294,33 @@ export function useChat() {
         content: images.length > 0 ? userParts : text,
       };
 
-      await runRequest(messages, userMsg, { model, forceImage });
+      await runRequest(messagesRef.current, userMsg, { model, forceImage });
     },
-    [messages, runRequest],
+    [runRequest],
   );
 
   // Regenerate: re-run the last user message, dropping the assistant reply that followed it
   const regenerate = useCallback(
     async (assistantId: string, modelOverride?: string) => {
       if (isStreaming) return;
-      const idx = messages.findIndex((m) => m.id === assistantId);
+      const current = messagesRef.current;
+      const idx = current.findIndex((m) => m.id === assistantId);
       if (idx <= 0) return;
-      const target = messages[idx];
-      // Find the most recent user message before this assistant message
+      const target = current[idx];
       let userIdx = idx - 1;
-      while (userIdx >= 0 && messages[userIdx].role !== "user") userIdx--;
+      while (userIdx >= 0 && current[userIdx].role !== "user") userIdx--;
       if (userIdx < 0) return;
 
-      const history = messages.slice(0, userIdx);
-      const userMsg = messages[userIdx];
+      const history = current.slice(0, userIdx);
+      const userMsg = current[userIdx];
       const model = modelOverride || target.model || "google/gemini-3-flash-preview";
       await runRequest(history, userMsg, {
         model,
         forceImage: target.forcedImage,
       });
     },
-    [messages, isStreaming, runRequest],
+    [isStreaming, runRequest],
   );
 
-  return { messages, isStreaming, send, stop, reset, regenerate };
+  return { isStreaming, send, stop, regenerate };
 }
