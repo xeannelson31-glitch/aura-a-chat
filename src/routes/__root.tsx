@@ -63,7 +63,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <AppErrorBoundary>
+          <MotionConfig reducedMotion="user">{children}</MotionConfig>
+        </AppErrorBoundary>
         <Scripts />
       </body>
     </html>
