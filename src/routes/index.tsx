@@ -297,34 +297,39 @@ function ChatPage() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="scroll-soft flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-4 py-6">
+        <main
+          ref={scrollRef}
+          id="chat-main"
+          aria-label="Chat conversation"
+          className="scroll-soft flex-1 overflow-y-auto overscroll-contain"
+        >
+          <div className="mx-auto w-full max-w-3xl px-3 py-6 sm:px-4 lg:max-w-4xl xl:max-w-5xl">
             {empty ? (
-              <div className="flex min-h-[55vh] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[40vh] flex-col items-center justify-center text-center sm:min-h-[55vh]">
                 <div
-                  className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-card"
+                  className="mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card sm:h-20 sm:w-20"
                   style={{ boxShadow: "var(--shadow-glow)" }}
                 >
-                  <img src={logoUrl} alt="Aura AI" className="h-full w-full object-contain p-1" />
+                  <img src={logoUrl} alt="" aria-hidden="true" className="h-full w-full object-contain p-1" />
                 </div>
-                <h2 className="text-3xl font-semibold tracking-tight">
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   What can I help you with?
                 </h2>
                 <p className="mt-2 max-w-md text-sm text-muted-foreground">
                   Ask anything, attach an image to analyze, or generate one from a description.
                 </p>
 
-                <div className="mt-8 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="mt-6 grid w-full max-w-xl grid-cols-1 gap-2 sm:mt-8 sm:grid-cols-2">
                   {SUGGESTIONS.map((s, i) => {
                     const Icon = s.icon;
                     return (
                       <button
                         key={i}
                         onClick={() => handleSend(s.text, {})}
-                        className="group flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-3.5 text-left text-sm transition hover:border-primary/40 hover:bg-card"
+                        className="group flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-3.5 text-left text-sm transition hover:border-primary/40 hover:bg-card focus-visible:border-primary"
                       >
-                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-foreground/90 group-hover:text-foreground">
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0 break-words text-foreground/90 group-hover:text-foreground">
                           {s.text}
                         </span>
                       </button>
@@ -333,7 +338,7 @@ function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-5 pb-4">
+              <div className="flex flex-col gap-5 pb-4" role="log" aria-live="polite" aria-atomic="false">
                 {messages.map((m) => (
                   <MessageBubble
                     key={m.id}
@@ -345,11 +350,11 @@ function ChatPage() {
               </div>
             )}
           </div>
-        </div>
+        </main>
 
         {/* Composer */}
         <div className="border-t border-border/40 bg-background/60 backdrop-blur-xl">
-          <div className="mx-auto w-full max-w-3xl px-4 py-3">
+          <div className="mx-auto w-full max-w-3xl px-3 py-3 sm:px-4 lg:max-w-4xl xl:max-w-5xl">
             <ChatInput onSend={handleSend} onStop={stop} isStreaming={isStreaming} />
           </div>
         </div>
