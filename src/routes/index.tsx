@@ -14,6 +14,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
 import { useConversations } from "@/hooks/useConversations";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelPicker, TEXT_MODELS } from "@/components/chat/ModelPicker";
