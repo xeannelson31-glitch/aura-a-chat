@@ -136,7 +136,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
 
           if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            throw new Error(err.error || `Image gen failed (${resp.status})`);
+            const e = new Error(err.error || `Image gen failed (${resp.status})`);
+            (e as Error & { status?: number }).status = resp.status;
+            throw e;
           }
           const data = (await resp.json()) as { imageUrl: string | null; text?: string };
           if (!data.imageUrl) throw new Error("No image returned.");
@@ -154,8 +156,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             ),
           );
         } catch (e) {
-          const msg = e instanceof Error ? e.message : "Something went wrong";
-          toast.error(msg);
+          const status = (e as { status?: number }).status;
+          const msg = friendlyError(e, status);
+          toast.error("Image generation failed", { description: msg });
           setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
         } finally {
           setIsStreaming(false);
