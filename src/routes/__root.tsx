@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { MotionConfig } from "framer-motion";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 import appCss from "../styles.css?url";
 
