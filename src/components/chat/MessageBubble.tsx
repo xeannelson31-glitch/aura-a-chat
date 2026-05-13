@@ -98,7 +98,7 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             src={message.generatedImage}
             alt="Generated"
-            className="max-h-[420px] rounded-2xl border border-border object-cover"
+            className="max-h-[420px] max-w-full rounded-2xl border border-border object-cover"
             style={{ boxShadow: "var(--shadow-glow)" }}
           />
         )}
@@ -108,8 +108,9 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             onClick={() => onRegenerate!(message.id)}
             className="mt-0.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             title="Regenerate response"
+            aria-label="Regenerate this response"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
             Regenerate
           </button>
         )}
