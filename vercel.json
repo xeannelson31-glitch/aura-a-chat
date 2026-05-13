@@ -1,5 +1,4 @@
 {
   "version": 2,
-  "buildCommand": "NITRO_PRESET=vercel npm run build",
-  "outputDirectory": ".vercel/output"
+  "buildCommand": "NITRO_PRESET=vercel npm run build"
 }
