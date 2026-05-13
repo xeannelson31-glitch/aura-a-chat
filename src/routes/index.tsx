@@ -9,6 +9,7 @@ import {
   Download,
   ChevronDown,
   AlertTriangle,
+  Menu,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
