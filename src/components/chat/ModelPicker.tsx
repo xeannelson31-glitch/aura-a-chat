@@ -7,6 +7,10 @@ export const TEXT_MODELS = [
   { id: "openai/gpt-5", name: "GPT-5", hint: "Top accuracy · Slower" },
   { id: "openai/gpt-5-mini", name: "GPT-5 Mini", hint: "Balanced GPT" },
   { id: "openai/gpt-5.2", name: "GPT-5.2", hint: "Enhanced reasoning" },
+  { id: "groq/llama-3.3-70b-versatile", name: "Llama 3.3 70B (Groq)", hint: "Ultra-fast · High performance" },
+  { id: "groq/mixtral-8x7b-32768", name: "Mixtral 8x7B (Groq)", hint: "Large context · Fast" },
+  { id: "zai/glm-5.1", name: "GLM-5.1 (Z.ai)", hint: "Advanced coding · Reasoning" },
+  { id: "zai/glm-4.7-flash", name: "GLM-4.7 Flash (Z.ai)", hint: "Efficient · Fast" },
 ] as const;
 
 interface Props {

@@ -8,21 +8,19 @@ export interface ChatInput {
 }
 
 // Server function for chat operations
-// Using .inputValidator() which is the correct method name in this version
 export const chatFn = createServerFn({ method: "POST" })
   .inputValidator((data: ChatInput) => data)
   .handler(async ({ data }) => {
     const { messages, model, mode } = data;
-    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    
+    const AURA_API_KEY = process.env.AURA_API_KEY;
+    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const ZAI_API_KEY = process.env.ZAI_API_KEY;
 
     const IMAGE_MODEL = "google/gemini-2.5-flash-image";
+    
     const TEXT_MODELS = new Set([
       "google/gemini-3-flash-preview",
       "google/gemini-2.5-pro",
@@ -30,8 +28,45 @@ export const chatFn = createServerFn({ method: "POST" })
       "openai/gpt-5",
       "openai/gpt-5-mini",
       "openai/gpt-5.2",
+      "groq/llama-3.3-70b-versatile",
+      "groq/mixtral-8x7b-32768",
+      "zai/glm-5.1",
+      "zai/glm-4.7-flash",
     ]);
 
+    const selectedModel = model && TEXT_MODELS.has(model) ? model : "google/gemini-3-flash-preview";
+    const provider = selectedModel.split('/')[0];
+    const providerModel = selectedModel.split('/').slice(1).join('/');
+
+    // Logic: Use provider key directly if available, otherwise fallback to Aura Gateway
+    let apiKey = "";
+    let apiUrl = "https://ai.gateway.aura.dev/v1/chat/completions";
+
+    if (provider === "google" && GOOGLE_API_KEY) {
+      apiKey = GOOGLE_API_KEY;
+      apiUrl = `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`;
+    } else if (provider === "groq" && GROQ_API_KEY) {
+      apiKey = GROQ_API_KEY;
+      apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+    } else if (provider === "openai" && OPENAI_API_KEY) {
+      apiKey = OPENAI_API_KEY;
+      apiUrl = "https://api.openai.com/v1/chat/completions";
+    } else if (provider === "zai" && ZAI_API_KEY) {
+      apiKey = ZAI_API_KEY;
+      apiUrl = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+    } else if (AURA_API_KEY) {
+      apiKey = AURA_API_KEY;
+      // apiUrl stays default Aura Gateway
+    }
+
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: `API key for ${provider} not configured` }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle Image Generation
     if (mode === "image") {
       const lastUser = [...messages].reverse().find((m: any) => m.role === "user");
       const prompt =
@@ -39,14 +74,14 @@ export const chatFn = createServerFn({ method: "POST" })
           ? lastUser.content
           : (lastUser?.content || []).find((p: any) => p.type === "text")?.text ?? "";
 
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const resp = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: IMAGE_MODEL,
+          model: provider === "google" ? IMAGE_MODEL : providerModel, // Fallback if direct provider used
           messages: [{ role: "user", content: prompt }],
           modalities: ["image", "text"],
         }),
@@ -69,22 +104,19 @@ export const chatFn = createServerFn({ method: "POST" })
       );
     }
 
-    const selectedModel =
-      model && TEXT_MODELS.has(model) ? model : "google/gemini-3-flash-preview";
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Handle Chat
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: apiUrl.includes("aura") ? selectedModel : providerModel,
         messages: [
           {
             role: "system",
-            content:
-              "You are Aura, a helpful, accurate, multimodal AI assistant. Be concise yet thorough. Use Markdown formatting (headings, lists, code fences with language tags) when it improves clarity. When the user shares an image, analyze it carefully and ground your answer in what you actually see. If the user asks you to generate or create an image, briefly acknowledge and tell them you'll create it — the system handles image generation separately.\n\nWhen the user asks for code or to build something:\n- Identify the full stack involved (framework, language, build tool, package manager, runtime, database, styling, etc.) and state it briefly up front.\n- Provide COMPLETE, runnable code — never truncate, never use ellipses or '...rest of the code' placeholders. Include every file the user needs.\n- Lay out the project structure as a file tree first, then output each file in its own fenced code block, with the file path on the line immediately before the block (e.g. `// src/App.tsx`).\n- Include all relevant languages and config: package.json/requirements.txt, tsconfig, vite/webpack/next config, .env.example, Dockerfile if relevant, README with run instructions.\n- For frontend work: include HTML/CSS/JS/TS as needed. For backend: include routes, handlers, schemas, migrations. For full-stack: cover both, plus how they wire together.\n- End with exact commands to install and run the project (`npm install && npm run dev`, etc.).\n- If the request is ambiguous, make a sensible default choice and call it out — don't ask follow-ups before delivering working code.",
+            content: "You are Aura, a helpful, accurate, multimodal AI assistant. Be concise yet thorough. Use Markdown formatting when it improves clarity.",
           },
           ...messages,
         ],
@@ -93,7 +125,8 @@ export const chatFn = createServerFn({ method: "POST" })
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: `AI gateway error: ${response.status}` }), {
+      const errorText = await response.text();
+      return new Response(JSON.stringify({ error: `AI error (${response.status}): ${errorText}` }), {
         status: response.status,
         headers: { "Content-Type": "application/json" },
       });

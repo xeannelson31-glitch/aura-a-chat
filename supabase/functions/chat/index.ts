@@ -1,7 +1,7 @@
 // @ts-nocheck
 /// <reference lib="deno.ns" />
 
-// Multimodal AI chat: text streaming + image generation via Lovable AI Gateway
+// Multimodal AI chat: text streaming + image generation via Aura AI Gateway
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -26,8 +26,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const AURA_API_KEY = Deno.env.get("AURA_API_KEY");
+    if (!AURA_API_KEY) throw new Error("AURA_API_KEY not configured");
 
     const { messages, model, mode } = await req.json();
 
@@ -39,10 +39,10 @@ Deno.serve(async (req: Request) => {
           ? lastUser.content
           : (lastUser?.content || []).find((p: any) => p.type === "text")?.text ?? "";
 
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const resp = await fetch("https://ai.gateway.aura.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${AURA_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
               status === 429
                 ? "Rate limit exceeded. Please try again shortly."
                 : status === 402
-                  ? "AI credits exhausted. Please add funds to your Lovable workspace."
+                  ? "AI credits exhausted. Please add funds to your Aura workspace."
                   : "Image generation failed.",
           }),
           { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -82,10 +82,10 @@ Deno.serve(async (req: Request) => {
     const selectedModel =
       model && TEXT_MODELS.has(model) ? model : "google/gemini-3-flash-preview";
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.aura.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AURA_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
       if (response.status === 402) {
         return new Response(
           JSON.stringify({
-            error: "AI credits exhausted. Please add funds to your Lovable workspace.",
+            error: "AI credits exhausted. Please add funds to your Aura workspace.",
           }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
