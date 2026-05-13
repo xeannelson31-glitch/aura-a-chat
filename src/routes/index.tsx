@@ -14,6 +14,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
 import { useConversations } from "@/hooks/useConversations";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelPicker, TEXT_MODELS } from "@/components/chat/ModelPicker";
@@ -85,6 +86,22 @@ function ChatPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  const clearDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(mobileDrawerRef, mobileSidebarOpen, () => setMobileSidebarOpen(false));
+  useFocusTrap(clearDialogRef, showClearConfirm, () => setShowClearConfirm(false));
+
+  // Lock body scroll while a modal/drawer is open.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const open = mobileSidebarOpen || showClearConfirm;
+    const prev = document.body.style.overflow;
+    if (open) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileSidebarOpen, showClearConfirm]);
 
   // Hydrate persisted UI state once on mount
   useEffect(() => {
@@ -166,12 +183,18 @@ function ChatPage() {
 
       {/* Mobile sidebar drawer */}
       {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Conversations"
+        >
           <div
             className="absolute inset-0 bg-background/70 backdrop-blur-sm"
             onClick={() => setMobileSidebarOpen(false)}
+            aria-hidden="true"
           />
-          <div className="absolute left-0 top-0 h-full">
+          <div ref={mobileDrawerRef} className="absolute left-0 top-0 h-full max-w-[85vw]">
             <ConversationSidebar
               conversations={conversations}
               activeId={activeId}
@@ -274,34 +297,39 @@ function ChatPage() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="scroll-soft flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-4 py-6">
+        <main
+          ref={scrollRef}
+          id="chat-main"
+          aria-label="Chat conversation"
+          className="scroll-soft flex-1 overflow-y-auto overscroll-contain"
+        >
+          <div className="mx-auto w-full max-w-3xl px-3 py-6 sm:px-4 lg:max-w-4xl xl:max-w-5xl">
             {empty ? (
-              <div className="flex min-h-[55vh] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[40vh] flex-col items-center justify-center text-center sm:min-h-[55vh]">
                 <div
-                  className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-card"
+                  className="mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card sm:h-20 sm:w-20"
                   style={{ boxShadow: "var(--shadow-glow)" }}
                 >
-                  <img src={logoUrl} alt="Aura AI" className="h-full w-full object-contain p-1" />
+                  <img src={logoUrl} alt="" aria-hidden="true" className="h-full w-full object-contain p-1" />
                 </div>
-                <h2 className="text-3xl font-semibold tracking-tight">
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   What can I help you with?
                 </h2>
                 <p className="mt-2 max-w-md text-sm text-muted-foreground">
                   Ask anything, attach an image to analyze, or generate one from a description.
                 </p>
 
-                <div className="mt-8 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="mt-6 grid w-full max-w-xl grid-cols-1 gap-2 sm:mt-8 sm:grid-cols-2">
                   {SUGGESTIONS.map((s, i) => {
                     const Icon = s.icon;
                     return (
                       <button
                         key={i}
                         onClick={() => handleSend(s.text, {})}
-                        className="group flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-3.5 text-left text-sm transition hover:border-primary/40 hover:bg-card"
+                        className="group flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-3.5 text-left text-sm transition hover:border-primary/40 hover:bg-card focus-visible:border-primary"
                       >
-                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-foreground/90 group-hover:text-foreground">
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0 break-words text-foreground/90 group-hover:text-foreground">
                           {s.text}
                         </span>
                       </button>
@@ -310,7 +338,7 @@ function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-5 pb-4">
+              <div className="flex flex-col gap-5 pb-4" role="log" aria-live="polite" aria-atomic="false">
                 {messages.map((m) => (
                   <MessageBubble
                     key={m.id}
@@ -322,11 +350,11 @@ function ChatPage() {
               </div>
             )}
           </div>
-        </div>
+        </main>
 
         {/* Composer */}
         <div className="border-t border-border/40 bg-background/60 backdrop-blur-xl">
-          <div className="mx-auto w-full max-w-3xl px-4 py-3">
+          <div className="mx-auto w-full max-w-3xl px-3 py-3 sm:px-4 lg:max-w-4xl xl:max-w-5xl">
             <ChatInput onSend={handleSend} onStop={stop} isStreaming={isStreaming} />
           </div>
         </div>
@@ -337,19 +365,26 @@ function ChatPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
           onClick={() => setShowClearConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-chat-title"
+          aria-describedby="clear-chat-desc"
         >
           <div
+            ref={clearDialogRef}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm rounded-2xl border border-border bg-card p-5"
             style={{ boxShadow: "var(--shadow-soft)" }}
           >
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base font-semibold text-foreground">Clear this chat?</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 id="clear-chat-title" className="text-base font-semibold text-foreground">
+                  Clear this chat?
+                </h3>
+                <p id="clear-chat-desc" className="mt-1 text-sm text-muted-foreground">
                   This permanently deletes the messages in{" "}
                   <span className="font-medium text-foreground">
                     “{active?.title ?? "this chat"}”
@@ -358,7 +393,7 @@ function ChatPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setShowClearConfirm(false)}
                 className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"

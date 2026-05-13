@@ -30,10 +30,10 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
         </div>
       )}
 
-      <div className={`flex max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex min-w-0 max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
         {/* User images */}
         {isUser && Array.isArray(message.content) && (
-          <div className="flex flex-wrap gap-2 justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
             {message.content
               .filter((p) => p.type === "image_url")
               .map((p, i) =>
@@ -42,7 +42,7 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
                     key={i}
                     src={p.image_url.url}
                     alt="attachment"
-                    className="max-h-56 rounded-xl border border-border object-cover"
+                    className="max-h-56 max-w-full rounded-xl border border-border object-cover"
                   />
                 ) : null,
               )}
@@ -65,8 +65,8 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             <div
               className={
                 isUser
-                  ? "rounded-2xl rounded-tr-md px-4 py-2.5 text-sm font-medium text-primary-foreground"
-                  : "rounded-2xl rounded-tl-md border border-border bg-card px-4 py-3 text-card-foreground"
+                  ? "max-w-full break-words rounded-2xl rounded-tr-md px-4 py-2.5 text-sm font-medium text-primary-foreground"
+                  : "max-w-full overflow-hidden break-words rounded-2xl rounded-tl-md border border-border bg-card px-4 py-3 text-card-foreground"
               }
               style={
                 isUser
@@ -98,7 +98,7 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             src={message.generatedImage}
             alt="Generated"
-            className="max-h-[420px] rounded-2xl border border-border object-cover"
+            className="max-h-[420px] max-w-full rounded-2xl border border-border object-cover"
             style={{ boxShadow: "var(--shadow-glow)" }}
           />
         )}
@@ -108,8 +108,9 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             onClick={() => onRegenerate!(message.id)}
             className="mt-0.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             title="Regenerate response"
+            aria-label="Regenerate this response"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
             Regenerate
           </button>
         )}

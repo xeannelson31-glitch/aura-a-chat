@@ -22,6 +22,24 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
+/** Convert a raw error into a short, user-friendly explanation. */
+function friendlyError(e: unknown, status?: number): string {
+  if (e instanceof Error && e.name === "AbortError") return "Request stopped.";
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return "You're offline. Check your connection and try again.";
+  }
+  if (status === 401 || status === 403) return "You're not authorized to use this model.";
+  if (status === 404) return "The chat service couldn't be reached.";
+  if (status === 408 || status === 504) return "The model took too long to respond. Please retry.";
+  if (status === 413) return "Message or attachment is too large.";
+  if (status === 429) return "You're sending requests too fast. Please wait a moment.";
+  if (status === 402) return "AI credits are exhausted. Please add credits and try again.";
+  if (status && status >= 500) return "The model service is temporarily unavailable. Please retry.";
+  if (e instanceof TypeError) return "Network error. Check your connection and try again.";
+  if (e instanceof Error && e.message) return e.message;
+  return "Something went wrong. Please try again.";
+}
+
 function toGatewayMessages(messages: ChatMessage[]) {
   return messages.map((m) => {
     if (typeof m.content === "string") {
@@ -118,7 +136,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
 
           if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            throw new Error(err.error || `Image gen failed (${resp.status})`);
+            const e = new Error(err.error || `Image gen failed (${resp.status})`);
+            (e as Error & { status?: number }).status = resp.status;
+            throw e;
           }
           const data = (await resp.json()) as { imageUrl: string | null; text?: string };
           if (!data.imageUrl) throw new Error("No image returned.");
@@ -136,8 +156,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             ),
           );
         } catch (e) {
-          const msg = e instanceof Error ? e.message : "Something went wrong";
-          toast.error(msg);
+          const status = (e as { status?: number }).status;
+          const msg = friendlyError(e, status);
+          toast.error("Image generation failed", { description: msg });
           setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
         } finally {
           setIsStreaming(false);
@@ -157,6 +178,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Hoisted so the catch block can access partial output for graceful recovery.
+      let assistantText = "";
+
       try {
         const resp = await fetch(CHAT_URL, {
           method: "POST",
@@ -173,13 +197,14 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
 
         if (!resp.ok || !resp.body) {
           const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error || `Request failed (${resp.status})`);
+          const e = new Error(err.error || `Request failed (${resp.status})`);
+          (e as Error & { status?: number }).status = resp.status;
+          throw e;
         }
 
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        let assistantText = "";
         let done = false;
 
         while (!done) {
@@ -255,17 +280,47 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         }
       } catch (e: unknown) {
         if ((e as Error).name === "AbortError") {
+          // User stopped the stream — keep any partial text, mark not pending.
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId && !m.content
-                ? { ...m, content: "_Stopped._", pending: false }
+              m.id === assistantId
+                ? {
+                    ...m,
+                    content: m.content || "_Stopped._",
+                    pending: false,
+                  }
                 : m,
             ),
           );
         } else {
-          const msg = e instanceof Error ? e.message : "Something went wrong";
-          toast.error(msg);
-          setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+          const status = (e as { status?: number }).status;
+          const msg = friendlyError(e, status);
+          // Preserve any partial assistant text so the user keeps what streamed.
+          const hadPartial = Boolean(assistantText);
+          setMessages((prev) =>
+            hadPartial
+              ? prev.map((m) =>
+                  m.id === assistantId
+                    ? {
+                        ...m,
+                        content:
+                          (typeof m.content === "string" ? m.content : assistantText) +
+                          "\n\n_⚠️ Connection lost — response is incomplete._",
+                        pending: false,
+                      }
+                    : m,
+                )
+              : prev.filter((m) => m.id !== assistantId),
+          );
+          toast.error("Chat error", {
+            description: msg,
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void runRequest(history, userMsg, opts);
+              },
+            },
+          });
         }
       } finally {
         setIsStreaming(false);

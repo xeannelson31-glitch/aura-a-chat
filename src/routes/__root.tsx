@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { MotionConfig } from "framer-motion";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 import appCss from "../styles.css?url";
 
@@ -61,7 +63,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <AppErrorBoundary>
+          <MotionConfig reducedMotion="user">{children}</MotionConfig>
+        </AppErrorBoundary>
         <Scripts />
       </body>
     </html>
