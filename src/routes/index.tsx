@@ -365,19 +365,26 @@ function ChatPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
           onClick={() => setShowClearConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-chat-title"
+          aria-describedby="clear-chat-desc"
         >
           <div
+            ref={clearDialogRef}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm rounded-2xl border border-border bg-card p-5"
             style={{ boxShadow: "var(--shadow-soft)" }}
           >
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base font-semibold text-foreground">Clear this chat?</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 id="clear-chat-title" className="text-base font-semibold text-foreground">
+                  Clear this chat?
+                </h3>
+                <p id="clear-chat-desc" className="mt-1 text-sm text-muted-foreground">
                   This permanently deletes the messages in{" "}
                   <span className="font-medium text-foreground">
                     “{active?.title ?? "this chat"}”
@@ -386,7 +393,7 @@ function ChatPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setShowClearConfirm(false)}
                 className="rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
