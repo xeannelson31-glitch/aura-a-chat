@@ -183,12 +183,18 @@ function ChatPage() {
 
       {/* Mobile sidebar drawer */}
       {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Conversations"
+        >
           <div
             className="absolute inset-0 bg-background/70 backdrop-blur-sm"
             onClick={() => setMobileSidebarOpen(false)}
+            aria-hidden="true"
           />
-          <div className="absolute left-0 top-0 h-full">
+          <div ref={mobileDrawerRef} className="absolute left-0 top-0 h-full max-w-[85vw]">
             <ConversationSidebar
               conversations={conversations}
               activeId={activeId}
