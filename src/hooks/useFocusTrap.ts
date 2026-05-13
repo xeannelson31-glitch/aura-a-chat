@@ -17,18 +17,17 @@ export function useFocusTrap(
 ) {
   useEffect(() => {
     if (!active) return;
-    const node: HTMLElement = container;
+    const node = containerRef.current;
+    if (!node) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
-    // Initial focus
-    const focusables = () =>
-      Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    const focusables = (): HTMLElement[] =>
+      Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
         (el) => !el.hasAttribute("aria-hidden") && el.offsetParent !== null,
       );
 
-    const initial = focusables()[0];
-    initial?.focus();
+    focusables()[0]?.focus();
 
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape" && onClose) {
@@ -46,12 +45,12 @@ export function useFocusTrap(
       const last = els[els.length - 1];
       const activeEl = document.activeElement as HTMLElement | null;
       if (e.shiftKey) {
-        if (activeEl === first || !container.contains(activeEl)) {
+        if (activeEl === first || !node.contains(activeEl)) {
           e.preventDefault();
           last.focus();
         }
       } else {
-        if (activeEl === last || !container.contains(activeEl)) {
+        if (activeEl === last || !node.contains(activeEl)) {
           e.preventDefault();
           first.focus();
         }
@@ -61,7 +60,6 @@ export function useFocusTrap(
     document.addEventListener("keydown", handleKey, true);
     return () => {
       document.removeEventListener("keydown", handleKey, true);
-      // Restore focus to the trigger that opened the trap.
       if (previouslyFocused && typeof previouslyFocused.focus === "function") {
         previouslyFocused.focus();
       }
