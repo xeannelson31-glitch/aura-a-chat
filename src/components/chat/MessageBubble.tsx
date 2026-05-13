@@ -30,10 +30,10 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
         </div>
       )}
 
-      <div className={`flex max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex min-w-0 max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
         {/* User images */}
         {isUser && Array.isArray(message.content) && (
-          <div className="flex flex-wrap gap-2 justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
             {message.content
               .filter((p) => p.type === "image_url")
               .map((p, i) =>
@@ -42,7 +42,7 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
                     key={i}
                     src={p.image_url.url}
                     alt="attachment"
-                    className="max-h-56 rounded-xl border border-border object-cover"
+                    className="max-h-56 max-w-full rounded-xl border border-border object-cover"
                   />
                 ) : null,
               )}
