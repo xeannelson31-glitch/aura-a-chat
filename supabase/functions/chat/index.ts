@@ -1,3 +1,6 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
+
 // Multimodal AI chat: text streaming + image generation via Lovable AI Gateway
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +20,7 @@ const TEXT_MODELS = new Set([
 
 const IMAGE_MODEL = "google/gemini-2.5-flash-image";
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

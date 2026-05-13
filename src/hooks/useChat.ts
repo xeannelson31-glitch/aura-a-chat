@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import { chatFn } from "@/lib/server-functions";
 
 export type ChatRole = "user" | "assistant";
 
@@ -17,8 +18,6 @@ export interface ChatMessage {
   model?: string;
   forcedImage?: boolean;
 }
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -53,7 +52,6 @@ interface UseChatArgs {
 export function useChat({ messages, setMessages }: UseChatArgs) {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  // Latest messages snapshot for callbacks that need it without re-creating
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -63,7 +61,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     setIsStreaming(false);
   }, []);
 
-  // Internal: run a request given an explicit history + user message
   const runRequest = useCallback(
     async (
       history: ChatMessage[],
@@ -86,7 +83,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
       const wantImage =
         forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
 
-      // ---- Image generation branch ----
       if (wantImage) {
         const placeholderId = uid();
         setMessages(() => [
@@ -104,16 +100,12 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         setIsStreaming(true);
 
         try {
-          const resp = await fetch(CHAT_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({
+          const resp = await chatFn({
+            data: {
               mode: "image",
               messages: toGatewayMessages([...history, userMsg]),
-            }),
+              model,
+            },
           });
 
           if (!resp.ok) {
@@ -145,7 +137,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         return;
       }
 
-      // ---- Streaming text branch ----
       const assistantId = uid();
       setMessages(() => [
         ...history,
@@ -158,17 +149,11 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
       abortRef.current = controller;
 
       try {
-        const resp = await fetch(CHAT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
+        const resp = await chatFn({
+          data: {
             model,
             messages: toGatewayMessages([...history, userMsg]),
-          }),
-          signal: controller.signal,
+          },
         });
 
         if (!resp.ok || !resp.body) {
@@ -253,21 +238,21 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             ),
           );
         }
-      } catch (e: unknown) {
-        if ((e as Error).name === "AbortError") {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId && !m.content
-                ? { ...m, content: "_Stopped._", pending: false }
-                : m,
-            ),
-          );
-        } else {
-          const msg = e instanceof Error ? e.message : "Something went wrong";
-          toast.error(msg);
-          setMessages((prev) => prev.filter((m) => m.id !== assistantId));
-        }
-      } finally {
+        } catch (e: unknown) {
+          if ((e as Error).name === "AbortError") {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId && !m.content
+                  ? { ...m, content: "_Stopped._", pending: false }
+                  : m,
+              ),
+            );
+          } else {
+            const msg = e instanceof Error ? e.message : "Something went wrong";
+            toast.error(msg);
+            setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+          }
+        } finally {
         setIsStreaming(false);
         abortRef.current = null;
       }
@@ -299,7 +284,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     [runRequest],
   );
 
-  // Regenerate: re-run the last user message, dropping the assistant reply that followed it
   const regenerate = useCallback(
     async (assistantId: string, modelOverride?: string) => {
       if (isStreaming) return;
