@@ -86,6 +86,22 @@ function ChatPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  const clearDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(mobileDrawerRef, mobileSidebarOpen, () => setMobileSidebarOpen(false));
+  useFocusTrap(clearDialogRef, showClearConfirm, () => setShowClearConfirm(false));
+
+  // Lock body scroll while a modal/drawer is open.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const open = mobileSidebarOpen || showClearConfirm;
+    const prev = document.body.style.overflow;
+    if (open) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileSidebarOpen, showClearConfirm]);
 
   // Hydrate persisted UI state once on mount
   useEffect(() => {
