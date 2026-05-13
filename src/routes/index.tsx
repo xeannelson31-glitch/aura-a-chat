@@ -75,31 +75,50 @@ function ChatPage() {
 
   const { isStreaming, send, stop, regenerate } = useChat({ messages, setMessages });
 
-  const [model, setModel] = useState<string>(loadModel);
+  // SSR-safe defaults; hydrate from localStorage after mount.
+  const [model, setModel] = useState<string>(TEXT_MODELS[0].id);
   const [exportOpen, setExportOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(loadSidebarCollapsed);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Persist model selection
+  // Hydrate persisted UI state once on mount
   useEffect(() => {
+    try {
+      const savedModel = localStorage.getItem(MODEL_KEY);
+      if (savedModel && TEXT_MODELS.some((m) => m.id === savedModel)) {
+        setModel(savedModel);
+      }
+      setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist model
+  useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(MODEL_KEY, model);
     } catch {
       /* ignore */
     }
-  }, [model]);
+  }, [model, hydrated]);
 
   // Persist sidebar state
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? "1" : "0");
     } catch {
       /* ignore */
     }
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed, hydrated]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
