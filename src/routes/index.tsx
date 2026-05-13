@@ -51,26 +51,6 @@ const SUGGESTIONS = [
 const MODEL_KEY = "aura-selected-model-v1";
 const SIDEBAR_KEY = "aura-sidebar-collapsed-v1";
 
-function loadModel(): string {
-  if (typeof window === "undefined") return TEXT_MODELS[0].id;
-  try {
-    const saved = localStorage.getItem(MODEL_KEY);
-    if (saved && TEXT_MODELS.some((m) => m.id === saved)) return saved;
-  } catch {
-    /* ignore */
-  }
-  return TEXT_MODELS[0].id;
-}
-
-function loadSidebarCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return localStorage.getItem(SIDEBAR_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 function ChatPage() {
   const {
     conversations,
