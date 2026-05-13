@@ -17,8 +17,8 @@ export function useFocusTrap(
 ) {
   useEffect(() => {
     if (!active) return;
-    const node = containerRef.current;
-    if (!node) return;
+    if (!containerRef.current) return;
+    const node: HTMLElement = containerRef.current;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
