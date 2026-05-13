@@ -178,6 +178,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Hoisted so the catch block can access partial output for graceful recovery.
+      let assistantText = "";
+
       try {
         const resp = await fetch(CHAT_URL, {
           method: "POST",
@@ -202,7 +205,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        let assistantText = "";
         let done = false;
 
         while (!done) {
