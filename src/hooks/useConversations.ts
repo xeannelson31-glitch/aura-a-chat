@@ -98,22 +98,24 @@ export function useConversations() {
     }
   }, [conversations, activeId]);
 
-  // Persist
+  // Persist (skip until hydrated to avoid clobbering localStorage with the bootstrap)
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
     } catch {
       /* quota — ignore */
     }
-  }, [conversations]);
+  }, [conversations, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       if (activeId) localStorage.setItem(ACTIVE_KEY, activeId);
     } catch {
       /* ignore */
     }
-  }, [activeId]);
+  }, [activeId, hydrated]);
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
 
