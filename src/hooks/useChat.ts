@@ -194,7 +194,9 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
 
         if (!resp.ok || !resp.body) {
           const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error || `Request failed (${resp.status})`);
+          const e = new Error(err.error || `Request failed (${resp.status})`);
+          (e as Error & { status?: number }).status = resp.status;
+          throw e;
         }
 
         const reader = resp.body.getReader();
