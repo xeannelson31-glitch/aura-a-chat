@@ -53,23 +53,43 @@ function deriveTitle(messages: ChatMessage[]): string {
   return trimmed.length > 42 ? trimmed.slice(0, 42) + "…" : trimmed;
 }
 
-export function useConversations() {
-  const [conversations, setConversations] = useState<Conversation[]>(() => {
-    const all = loadAll();
-    if (all.length > 0) return all;
-    // Bootstrap with a fresh empty conversation
-    const now = Date.now();
-    return [
-      { id: uid(), title: "New chat", createdAt: now, updatedAt: now, messages: [] },
-    ];
-  });
+// SSR-safe stable bootstrap (avoids hydration mismatch).
+// Real data is loaded from localStorage in a useEffect after mount.
+const BOOTSTRAP_ID = "bootstrap";
+const BOOTSTRAP: Conversation = {
+  id: BOOTSTRAP_ID,
+  title: "New chat",
+  createdAt: 0,
+  updatedAt: 0,
+  messages: [],
+};
 
-  const [activeId, setActiveId] = useState<string>(() => {
-    const stored = loadActiveId();
+export function useConversations() {
+  const [conversations, setConversations] = useState<Conversation[]>([BOOTSTRAP]);
+  const [activeId, setActiveId] = useState<string>(BOOTSTRAP_ID);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate from localStorage AFTER mount so SSR/CSR initial render match.
+  useEffect(() => {
     const all = loadAll();
-    if (stored && all.some((c) => c.id === stored)) return stored;
-    return all[0]?.id ?? "";
-  });
+    const stored = loadActiveId();
+    if (all.length > 0) {
+      setConversations(all);
+      setActiveId(stored && all.some((c) => c.id === stored) ? stored : all[0].id);
+    } else {
+      const now = Date.now();
+      const fresh: Conversation = {
+        id: uid(),
+        title: "New chat",
+        createdAt: now,
+        updatedAt: now,
+        messages: [],
+      };
+      setConversations([fresh]);
+      setActiveId(fresh.id);
+    }
+    setHydrated(true);
+  }, []);
 
   // Make sure activeId always points at a real conversation
   useEffect(() => {
