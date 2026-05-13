@@ -20,7 +20,8 @@ export function ModelPicker({ value, onChange }: Props) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-full border border-border bg-card/80 py-2 pl-4 pr-9 text-sm font-medium text-foreground backdrop-blur-md transition hover:border-primary/50 focus:border-primary focus:outline-none"
+        aria-label="Select model"
+        className="max-w-[140px] appearance-none truncate rounded-full border border-border bg-card/80 py-2 pl-3 pr-8 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-primary/50 focus:border-primary focus:outline-none sm:max-w-none sm:pl-4 sm:pr-9 sm:text-sm"
       >
         {TEXT_MODELS.map((m) => (
           <option key={m.id} value={m.id}>
@@ -28,7 +29,7 @@ export function ModelPicker({ value, onChange }: Props) {
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:right-3" />
     </div>
   );
 }
