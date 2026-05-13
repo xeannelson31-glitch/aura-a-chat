@@ -278,17 +278,47 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         }
       } catch (e: unknown) {
         if ((e as Error).name === "AbortError") {
+          // User stopped the stream — keep any partial text, mark not pending.
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId && !m.content
-                ? { ...m, content: "_Stopped._", pending: false }
+              m.id === assistantId
+                ? {
+                    ...m,
+                    content: m.content || "_Stopped._",
+                    pending: false,
+                  }
                 : m,
             ),
           );
         } else {
-          const msg = e instanceof Error ? e.message : "Something went wrong";
-          toast.error(msg);
-          setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+          const status = (e as { status?: number }).status;
+          const msg = friendlyError(e, status);
+          // Preserve any partial assistant text so the user keeps what streamed.
+          const hadPartial = Boolean(assistantText);
+          setMessages((prev) =>
+            hadPartial
+              ? prev.map((m) =>
+                  m.id === assistantId
+                    ? {
+                        ...m,
+                        content:
+                          (typeof m.content === "string" ? m.content : assistantText) +
+                          "\n\n_⚠️ Connection lost — response is incomplete._",
+                        pending: false,
+                      }
+                    : m,
+                )
+              : prev.filter((m) => m.id !== assistantId),
+          );
+          toast.error("Chat error", {
+            description: msg,
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void runRequest(history, userMsg, opts);
+              },
+            },
+          });
         }
       } finally {
         setIsStreaming(false);
