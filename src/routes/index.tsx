@@ -9,6 +9,7 @@ import {
   Download,
   ChevronDown,
   AlertTriangle,
+  Menu,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { useChat, type ChatMessage } from "@/hooks/useChat";
@@ -50,26 +51,6 @@ const SUGGESTIONS = [
 const MODEL_KEY = "aura-selected-model-v1";
 const SIDEBAR_KEY = "aura-sidebar-collapsed-v1";
 
-function loadModel(): string {
-  if (typeof window === "undefined") return TEXT_MODELS[0].id;
-  try {
-    const saved = localStorage.getItem(MODEL_KEY);
-    if (saved && TEXT_MODELS.some((m) => m.id === saved)) return saved;
-  } catch {
-    /* ignore */
-  }
-  return TEXT_MODELS[0].id;
-}
-
-function loadSidebarCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return localStorage.getItem(SIDEBAR_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 function ChatPage() {
   const {
     conversations,
@@ -94,31 +75,50 @@ function ChatPage() {
 
   const { isStreaming, send, stop, regenerate } = useChat({ messages, setMessages });
 
-  const [model, setModel] = useState<string>(loadModel);
+  // SSR-safe defaults; hydrate from localStorage after mount.
+  const [model, setModel] = useState<string>(TEXT_MODELS[0].id);
   const [exportOpen, setExportOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(loadSidebarCollapsed);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Persist model selection
+  // Hydrate persisted UI state once on mount
   useEffect(() => {
+    try {
+      const savedModel = localStorage.getItem(MODEL_KEY);
+      if (savedModel && TEXT_MODELS.some((m) => m.id === savedModel)) {
+        setModel(savedModel);
+      }
+      setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist model
+  useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(MODEL_KEY, model);
     } catch {
       /* ignore */
     }
-  }, [model]);
+  }, [model, hydrated]);
 
   // Persist sidebar state
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? "1" : "0");
     } catch {
       /* ignore */
     }
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed, hydrated]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -149,37 +149,76 @@ function ChatPage() {
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
 
   return (
-    <div className="flex h-dvh w-full">
-      <ConversationSidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={setActiveId}
-        onCreate={createConversation}
-        onDelete={deleteConversation}
-        onRename={renameConversation}
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
-      />
+    <div className="flex h-dvh w-full overflow-hidden">
+      {/* Desktop sidebar (md+) */}
+      <div className="hidden md:flex">
+        <ConversationSidebar
+          conversations={conversations}
+          activeId={activeId}
+          onSelect={setActiveId}
+          onCreate={createConversation}
+          onDelete={deleteConversation}
+          onRename={renameConversation}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
+        />
+      </div>
+
+      {/* Mobile sidebar drawer */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full">
+            <ConversationSidebar
+              conversations={conversations}
+              activeId={activeId}
+              onSelect={(id) => {
+                setActiveId(id);
+                setMobileSidebarOpen(false);
+              }}
+              onCreate={() => {
+                createConversation();
+                setMobileSidebarOpen(false);
+              }}
+              onDelete={deleteConversation}
+              onRename={renameConversation}
+              collapsed={false}
+              onToggleCollapsed={() => setMobileSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
         <header className="sticky top-0 z-10 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-2.5">
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-3 sm:px-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden"
+                aria-label="Open conversations"
+                title="Conversations"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
               <div
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-card"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card"
                 style={{ boxShadow: "var(--shadow-glow)" }}
               >
                 <img src={logoUrl} alt="Aura AI" className="h-full w-full object-contain p-0.5" />
               </div>
-              <div className="leading-tight">
-                <h1 className="text-base font-semibold tracking-tight">Aura AI Chat</h1>
-                <p className="text-[11px] text-muted-foreground">
+              <div className="min-w-0 leading-tight">
+                <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Aura AI Chat</h1>
+                <p className="hidden text-[11px] text-muted-foreground sm:block">
                   Multimodal · Vision · Image gen
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <ModelPicker value={model} onChange={setModel} />
 
               <div className="relative" ref={exportRef}>
