@@ -149,37 +149,76 @@ function ChatPage() {
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
 
   return (
-    <div className="flex h-dvh w-full">
-      <ConversationSidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={setActiveId}
-        onCreate={createConversation}
-        onDelete={deleteConversation}
-        onRename={renameConversation}
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
-      />
+    <div className="flex h-dvh w-full overflow-hidden">
+      {/* Desktop sidebar (md+) */}
+      <div className="hidden md:flex">
+        <ConversationSidebar
+          conversations={conversations}
+          activeId={activeId}
+          onSelect={setActiveId}
+          onCreate={createConversation}
+          onDelete={deleteConversation}
+          onRename={renameConversation}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
+        />
+      </div>
+
+      {/* Mobile sidebar drawer */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full">
+            <ConversationSidebar
+              conversations={conversations}
+              activeId={activeId}
+              onSelect={(id) => {
+                setActiveId(id);
+                setMobileSidebarOpen(false);
+              }}
+              onCreate={() => {
+                createConversation();
+                setMobileSidebarOpen(false);
+              }}
+              onDelete={deleteConversation}
+              onRename={renameConversation}
+              collapsed={false}
+              onToggleCollapsed={() => setMobileSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
         <header className="sticky top-0 z-10 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-2.5">
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-3 sm:px-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden"
+                aria-label="Open conversations"
+                title="Conversations"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
               <div
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-card"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card"
                 style={{ boxShadow: "var(--shadow-glow)" }}
               >
                 <img src={logoUrl} alt="Aura AI" className="h-full w-full object-contain p-0.5" />
               </div>
-              <div className="leading-tight">
-                <h1 className="text-base font-semibold tracking-tight">Aura AI Chat</h1>
-                <p className="text-[11px] text-muted-foreground">
+              <div className="min-w-0 leading-tight">
+                <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Aura AI Chat</h1>
+                <p className="hidden text-[11px] text-muted-foreground sm:block">
                   Multimodal · Vision · Image gen
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <ModelPicker value={model} onChange={setModel} />
 
               <div className="relative" ref={exportRef}>
