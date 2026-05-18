@@ -278,23 +278,10 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         } else {
           const status = (e as { status?: number }).status;
           const msg = friendlyError(e, status);
-          // Preserve any partial assistant text so the user keeps what streamed.
-          const hadPartial = Boolean(assistantText);
-          setMessages((prev) =>
-            hadPartial
-              ? prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        content:
-                          (typeof m.content === "string" ? m.content : assistantText) +
-                          "\n\n_⚠️ Connection lost — response is incomplete._",
-                        pending: false,
-                      }
-                    : m,
-                )
-              : prev.filter((m) => m.id !== assistantId),
-          );
+          // Drop the failed/partial assistant message entirely. Retry will
+          // re-run the original request fresh (same history, same user message,
+          // same model + forceImage) and produce a brand-new response.
+          setMessages((prev) => prev.filter((m) => m.id !== assistantId));
           toast.error("Chat error", {
             description: msg,
             action: {
