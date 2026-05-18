@@ -248,11 +248,14 @@ function ChatPage() {
                 <button
                   onClick={() => setExportOpen((v) => !v)}
                   disabled={empty}
+                  aria-label="Export transcript"
+                  aria-haspopup="menu"
+                  aria-expanded={exportOpen}
                   className="flex h-9 items-center gap-1 rounded-full border border-border bg-card/80 px-3 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-30"
                   title="Export transcript"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  <ChevronDown className="h-3 w-3" />
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  <ChevronDown className="h-3 w-3" aria-hidden="true" />
                 </button>
                 {exportOpen && !empty && (
                   <div
