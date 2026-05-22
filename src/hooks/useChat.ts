@@ -41,9 +41,29 @@ function toGatewayMessages(messages: ChatMessage[]) {
 
 function looksLikeImageRequest(text: string) {
   const t = text.toLowerCase().trim();
-  return /^(\/(image|img|generate)\b|generate (an? )?image|create (an? )?image|draw (me )?(an? )?|make (an? )?(image|picture|illustration)|picture of|illustration of|render (an? )?image)/.test(
-    t,
-  );
+  if (!t) return false;
+  // Explicit slash command
+  if (/^\/(image|img|generate|imagine)\b/.test(t)) return true;
+  // Visual-noun anywhere with a generation verb
+  if (
+    /(image|picture|photo|illustration|artwork|drawing|painting|render(?:ing)?|logo|icon|wallpaper|portrait|scene|landscape|sticker|avatar|banner|poster|sketch)\b/.test(
+      t,
+    ) &&
+    /\b(generate|create|draw|make|render|design|sketch|paint|illustrate|imagine|produce|give me|show me)\b/.test(
+      t,
+    )
+  ) {
+    return true;
+  }
+  // Strong image-only verbs at the start ("generate me a dog", "draw a cat", "paint a sunset")
+  if (
+    /^(generate|draw|render|sketch|paint|illustrate|imagine|visualize)\s+(me\s+|us\s+)?(an?\s+|the\s+|some\s+)?\S+/.test(
+      t,
+    )
+  ) {
+    return true;
+  }
+  return false;
 }
 
 interface UseChatArgs {
