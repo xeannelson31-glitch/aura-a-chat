@@ -105,6 +105,21 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
           />
         )}
 
+        {!isUser && !message.pending && message.model && (
+          <div
+            className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground"
+            title={`${modelLabel(message.model)} · ${providerOf(message.model)}`}
+          >
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full bg-primary/70"
+              aria-hidden="true"
+            />
+            <span>{providerOf(message.model)}</span>
+            <span aria-hidden="true">·</span>
+            <span className="truncate">{modelLabel(message.model)}</span>
+          </div>
+        )}
+
         {showRegen && (
           <button
             onClick={() => onRegenerate!(message.id)}
@@ -116,6 +131,7 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             Regenerate
           </button>
         )}
+
       </div>
 
       {isUser && (
