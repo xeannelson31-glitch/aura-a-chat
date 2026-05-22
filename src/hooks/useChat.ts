@@ -317,6 +317,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             ),
           );
         }
+        providerHealth.markSuccess(model);
       } catch (e: unknown) {
         if ((e as Error).name === "AbortError") {
           // User stopped the stream — keep any partial text, mark not pending.
@@ -334,20 +335,23 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         } else {
           const status = (e as { status?: number }).status;
           const msg = friendlyError(e, status);
-          // Drop the failed/partial assistant message entirely. Retry will
-          // re-run the original request fresh (same history, same user message,
-          // same model + forceImage) and produce a brand-new response.
+          // Drop the failed/partial assistant message entirely. Auto-fallback
+          // (if available) re-runs fresh with the next provider; otherwise we
+          // surface a toast with manual Retry.
           setMessages((prev) => prev.filter((m) => m.id !== assistantId));
-          toast.error("Chat error", {
-            description: msg,
-            action: {
-              label: "Retry",
-              onClick: () => {
-                void runRequest(history, userMsg, opts);
+          if (!tryFallback(status, msg)) {
+            toast.error("Chat error", {
+              description: msg,
+              action: {
+                label: "Retry",
+                onClick: () => {
+                  void runRequest(history, userMsg, opts);
+                },
               },
-            },
-          });
+            });
+          }
         }
+
       } finally {
         setIsStreaming(false);
         abortRef.current = null;
