@@ -6,6 +6,14 @@
 //   "openai-direct/<m>"  → OpenAI API direct (OPENAI_API_KEY)
 //   "gemini-direct/<m>"  → Google Gemini OpenAI-compat (GEMINI_API_KEY)
 //   "zai/<m>"            → Z.ai OpenAI-compat (ZAI_API_KEY)
+
+declare const Deno: {
+  serve: (handler: (req: Request) => Promise<Response> | Response) => void;
+  env: {
+    get: (key: string) => string | undefined;
+  };
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -86,7 +94,7 @@ function errorBody(status: number, fallback: string) {
   return fallback;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
