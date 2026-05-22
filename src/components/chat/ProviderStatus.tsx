@@ -55,11 +55,7 @@ export function ProviderStatus() {
       </button>
       {open && (
         <>
-          <div
-            className="fixed inset-0 z-30"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             role="menu"
             className="absolute right-0 z-40 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
@@ -75,10 +71,7 @@ export function ProviderStatus() {
                   className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
                 >
                   <span className="flex items-center gap-2">
-                    <span
-                      className={`h-2 w-2 rounded-full ${DOT[h.status]}`}
-                      aria-hidden="true"
-                    />
+                    <span className={`h-2 w-2 rounded-full ${DOT[h.status]}`} aria-hidden="true" />
                     <span className="font-medium">{p}</span>
                   </span>
                   <span className="text-muted-foreground">{LABEL[h.status]}</span>

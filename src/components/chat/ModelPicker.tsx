@@ -9,25 +9,60 @@ export interface ModelOption {
 
 export const TEXT_MODELS: readonly ModelOption[] = [
   // Lovable AI Gateway (no per-user key required)
-  { id: "google/gemini-3-flash-preview", name: "Gemini 3 Flash", hint: "Fast · Default", group: "Lovable AI" },
-  { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro", hint: "Strong reasoning", group: "Lovable AI" },
-  { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", hint: "Fast multimodal", group: "Lovable AI" },
+  {
+    id: "google/gemini-3-flash-preview",
+    name: "Gemini 3 Flash",
+    hint: "Fast · Default",
+    group: "Lovable AI",
+  },
+  {
+    id: "google/gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    hint: "Strong reasoning",
+    group: "Lovable AI",
+  },
+  {
+    id: "google/gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    hint: "Fast multimodal",
+    group: "Lovable AI",
+  },
   { id: "openai/gpt-5", name: "GPT-5", hint: "Top accuracy", group: "Lovable AI" },
   { id: "openai/gpt-5-mini", name: "GPT-5 Mini", hint: "Balanced", group: "Lovable AI" },
   { id: "openai/gpt-5.2", name: "GPT-5.2", hint: "Enhanced reasoning", group: "Lovable AI" },
 
   // Groq (direct, GROQ_API_KEY)
   { id: "groq/llama-3.3-70b-versatile", name: "Llama 3.3 70B", hint: "Groq · Fast", group: "Groq" },
-  { id: "groq/llama-3.1-8b-instant", name: "Llama 3.1 8B", hint: "Groq · Ultra-fast", group: "Groq" },
+  {
+    id: "groq/llama-3.1-8b-instant",
+    name: "Llama 3.1 8B",
+    hint: "Groq · Ultra-fast",
+    group: "Groq",
+  },
   { id: "groq/openai/gpt-oss-20b", name: "GPT-OSS 20B", hint: "Groq · Open", group: "Groq" },
 
   // OpenAI (direct, OPENAI_API_KEY)
   { id: "openai-direct/gpt-4o", name: "GPT-4o", hint: "OpenAI direct", group: "OpenAI" },
-  { id: "openai-direct/gpt-4o-mini", name: "GPT-4o Mini", hint: "OpenAI direct · Fast", group: "OpenAI" },
+  {
+    id: "openai-direct/gpt-4o-mini",
+    name: "GPT-4o Mini",
+    hint: "OpenAI direct · Fast",
+    group: "OpenAI",
+  },
 
   // Gemini (direct, GEMINI_API_KEY)
-  { id: "gemini-direct/gemini-2.5-flash", name: "Gemini 2.5 Flash (direct)", hint: "Google direct", group: "Gemini" },
-  { id: "gemini-direct/gemini-2.5-pro", name: "Gemini 2.5 Pro (direct)", hint: "Google direct", group: "Gemini" },
+  {
+    id: "gemini-direct/gemini-2.5-flash",
+    name: "Gemini 2.5 Flash (direct)",
+    hint: "Google direct",
+    group: "Gemini",
+  },
+  {
+    id: "gemini-direct/gemini-2.5-pro",
+    name: "Gemini 2.5 Pro (direct)",
+    hint: "Google direct",
+    group: "Gemini",
+  },
 
   // Z.ai (direct, ZAI_API_KEY)
   { id: "zai/glm-4.5", name: "GLM-4.5", hint: "Z.ai · Reasoning", group: "Z.ai" },

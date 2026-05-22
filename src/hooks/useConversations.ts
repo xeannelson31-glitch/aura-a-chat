@@ -125,8 +125,7 @@ export function useConversations() {
         prev.map((c) => {
           if (c.id !== activeId) return c;
           const nextMessages = updater(c.messages);
-          const titleNeedsUpdate =
-            (c.title === "New chat" || !c.title) && nextMessages.length > 0;
+          const titleNeedsUpdate = (c.title === "New chat" || !c.title) && nextMessages.length > 0;
           return {
             ...c,
             messages: nextMessages,
@@ -186,9 +185,7 @@ export function useConversations() {
   const clearActiveMessages = useCallback(() => {
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === activeId
-          ? { ...c, messages: [], title: "New chat", updatedAt: Date.now() }
-          : c,
+        c.id === activeId ? { ...c, messages: [], title: "New chat", updatedAt: Date.now() } : c,
       ),
     );
   }, [activeId]);

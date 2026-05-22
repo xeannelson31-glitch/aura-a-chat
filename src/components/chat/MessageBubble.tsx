@@ -6,7 +6,6 @@ import type { ChatMessage } from "@/hooks/useChat";
 import { modelLabel, providerOf } from "@/lib/providers";
 import logoUrl from "@/assets/aura-logo.webp";
 
-
 interface Props {
   message: ChatMessage;
   onRegenerate?: (id: string) => void;
@@ -15,8 +14,7 @@ interface Props {
 
 export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
   const isUser = message.role === "user";
-  const showRegen =
-    !isUser && !message.pending && canRegenerate && onRegenerate;
+  const showRegen = !isUser && !message.pending && canRegenerate && onRegenerate;
 
   return (
     <motion.div
@@ -26,13 +24,17 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
       className={`flex w-full gap-3 ${isUser ? "justify-end" : "justify-start"}`}
     >
       {!isUser && (
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card"
-             style={{ boxShadow: "var(--shadow-glow)" }}>
+        <div
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card"
+          style={{ boxShadow: "var(--shadow-glow)" }}
+        >
           <img src={logoUrl} alt="Aura" className="h-full w-full object-contain p-0.5" />
         </div>
       )}
 
-      <div className={`flex min-w-0 max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
+      <div
+        className={`flex min-w-0 max-w-[85%] flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}
+      >
         {/* User images */}
         {isUser && Array.isArray(message.content) && (
           <div className="flex flex-wrap justify-end gap-2">
@@ -131,7 +133,6 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             Regenerate
           </button>
         )}
-
       </div>
 
       {isUser && (

@@ -46,7 +46,10 @@ export const Route = createFileRoute("/")({
 
 const SUGGESTIONS = [
   { icon: Lightbulb, text: "Explain quantum entanglement like I'm 12" },
-  { icon: Code2, text: "Build a complete Next.js + Tailwind landing page with hero, features, and contact form — full project structure" },
+  {
+    icon: Code2,
+    text: "Build a complete Next.js + Tailwind landing page with hero, features, and contact form — full project structure",
+  },
   { icon: ImageIcon, text: "Generate an image of a cozy reading nook at sunset" },
   { icon: BookOpen, text: "Summarize the plot of Dune in 5 bullets" },
 ];
@@ -237,7 +240,9 @@ function ChatPage() {
                 <img src={logoUrl} alt="Aura AI" className="h-full w-full object-contain p-0.5" />
               </div>
               <div className="min-w-0 leading-tight">
-                <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">Aura AI Chat</h1>
+                <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">
+                  Aura AI Chat
+                </h1>
                 <p className="hidden text-[11px] text-muted-foreground sm:block">
                   Multimodal · Vision · Image gen
                 </p>
@@ -246,7 +251,6 @@ function ChatPage() {
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <ProviderStatus />
               <ModelPicker value={model} onChange={setModel} />
-
 
               <div className="relative" ref={exportRef}>
                 <button
@@ -317,7 +321,12 @@ function ChatPage() {
                   className="mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-card sm:h-20 sm:w-20"
                   style={{ boxShadow: "var(--shadow-glow)" }}
                 >
-                  <img src={logoUrl} alt="" aria-hidden="true" className="h-full w-full object-contain p-1" />
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-contain p-1"
+                  />
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   What can I help you with?
@@ -345,7 +354,12 @@ function ChatPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-5 pb-4" role="log" aria-live="polite" aria-atomic="false">
+              <div
+                className="flex flex-col gap-5 pb-4"
+                role="log"
+                aria-live="polite"
+                aria-atomic="false"
+              >
                 {messages.map((m) => (
                   <MessageBubble
                     key={m.id}

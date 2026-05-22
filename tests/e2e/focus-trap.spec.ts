@@ -45,8 +45,8 @@ test.describe("mobile drawer focus management", () => {
     await expect(drawer).toBeVisible();
 
     // First focusable should now be inside the drawer.
-    const focusedInsideDrawer = await drawer.evaluate(
-      (node) => node.contains(document.activeElement),
+    const focusedInsideDrawer = await drawer.evaluate((node) =>
+      node.contains(document.activeElement),
     );
     expect(focusedInsideDrawer).toBe(true);
 
@@ -55,9 +55,7 @@ test.describe("mobile drawer focus management", () => {
     await expect(drawer).toBeHidden();
 
     // Focus should be restored to the trigger button.
-    const triggerIsFocused = await trigger.evaluate(
-      (node) => node === document.activeElement,
-    );
+    const triggerIsFocused = await trigger.evaluate((node) => node === document.activeElement);
     expect(triggerIsFocused).toBe(true);
   });
 });
@@ -78,17 +76,13 @@ test.describe("clear-chat dialog focus management", () => {
     await expect(dialog).toBeVisible();
 
     // Focus should land inside the dialog.
-    const insideDialog = await dialog.evaluate((node) =>
-      node.contains(document.activeElement),
-    );
+    const insideDialog = await dialog.evaluate((node) => node.contains(document.activeElement));
     expect(insideDialog).toBe(true);
 
     // Tab repeatedly — focus must stay inside.
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press("Tab");
-      const stillInside = await dialog.evaluate((node) =>
-        node.contains(document.activeElement),
-      );
+      const stillInside = await dialog.evaluate((node) => node.contains(document.activeElement));
       expect(stillInside).toBe(true);
     }
 
@@ -97,9 +91,7 @@ test.describe("clear-chat dialog focus management", () => {
     await expect(dialog).toBeHidden();
 
     // Trigger regains focus.
-    const triggerFocused = await trigger.evaluate(
-      (node) => node === document.activeElement,
-    );
+    const triggerFocused = await trigger.evaluate((node) => node === document.activeElement);
     expect(triggerFocused).toBe(true);
   });
 

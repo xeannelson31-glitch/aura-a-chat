@@ -64,13 +64,19 @@ export function ChatInput({ onSend, onStop, isStreaming }: Props) {
   };
 
   return (
-    <div className="rounded-3xl border border-border bg-card/80 p-3 backdrop-blur-md"
-         style={{ boxShadow: "var(--shadow-soft)" }}>
+    <div
+      className="rounded-3xl border border-border bg-card/80 p-3 backdrop-blur-md"
+      style={{ boxShadow: "var(--shadow-soft)" }}
+    >
       {images.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2 px-1">
           {images.map((src, i) => (
             <div key={i} className="relative">
-              <img src={src} className="h-16 w-16 rounded-lg border border-border object-cover" alt="" />
+              <img
+                src={src}
+                className="h-16 w-16 rounded-lg border border-border object-cover"
+                alt=""
+              />
               <button
                 onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
                 className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground transition hover:scale-110"
@@ -152,7 +158,8 @@ export function ChatInput({ onSend, onStop, isStreaming }: Props) {
 
       <p className="mt-1.5 px-2 text-[11px] text-muted-foreground/70">
         <ImageIcon className="mr-1 inline h-3 w-3" />
-        Vision: attach images for analysis · Press <kbd className="rounded bg-secondary px-1">Enter</kbd> to send
+        Vision: attach images for analysis · Press{" "}
+        <kbd className="rounded bg-secondary px-1">Enter</kbd> to send
       </p>
     </div>
   );

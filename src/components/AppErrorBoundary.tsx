@@ -37,8 +37,7 @@ export class AppErrorBoundary extends Component<Props, State> {
   render() {
     if (!this.state.error) return this.props.children;
 
-    const message =
-      this.state.error.message?.slice(0, 240) || "An unexpected error occurred.";
+    const message = this.state.error.message?.slice(0, 240) || "An unexpected error occurred.";
 
     return (
       <div
@@ -57,8 +56,7 @@ export class AppErrorBoundary extends Component<Props, State> {
             Something went wrong
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The app hit an unexpected error. Your conversations are still saved
-            in this browser.
+            The app hit an unexpected error. Your conversations are still saved in this browser.
           </p>
           <pre className="mt-4 max-h-32 overflow-auto rounded-md bg-secondary/60 p-3 text-left font-mono text-[11px] text-muted-foreground">
             {message}

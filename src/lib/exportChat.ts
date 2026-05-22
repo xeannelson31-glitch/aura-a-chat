@@ -32,12 +32,14 @@ function download(filename: string, content: string, mime: string) {
 }
 
 function safeSlug(s: string) {
-  return s
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .toLowerCase()
-    .slice(0, 40) || "aura-chat";
+  return (
+    s
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .toLowerCase()
+      .slice(0, 40) || "aura-chat"
+  );
 }
 
 /**
@@ -111,10 +113,7 @@ export function exportAsJSON(messages: ChatMessage[], chatTitle?: string) {
  * inside a single .zip so the export works offline. Attached and generated
  * images are saved as separate files and referenced via relative paths.
  */
-export async function exportAsMarkdownBundle(
-  messages: ChatMessage[],
-  chatTitle?: string,
-) {
+export async function exportAsMarkdownBundle(messages: ChatMessage[], chatTitle?: string) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const slug = safeSlug(chatTitle ?? "aura-chat");
 

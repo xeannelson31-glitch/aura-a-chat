@@ -62,7 +62,12 @@ describe("retry handler contract", () => {
     // response only produced partial text, the retry handler is still safe
     // to call — it simply triggers a fresh request.
     const runRequest = vi.fn().mockResolvedValue(undefined);
-    const onRetry = makeRetryHandler([], { id: "u", role: "user", content: "x" }, { model: "openai/gpt-5" }, runRequest);
+    const onRetry = makeRetryHandler(
+      [],
+      { id: "u", role: "user", content: "x" },
+      { model: "openai/gpt-5" },
+      runRequest,
+    );
     expect(() => {
       onRetry();
       onRetry();

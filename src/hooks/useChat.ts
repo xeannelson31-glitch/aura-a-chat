@@ -1,13 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendlyError";
-import {
-  fallbackChain,
-  modelLabel,
-  providerHealth,
-  providerOf,
-} from "@/lib/providers";
-
+import { fallbackChain, modelLabel, providerHealth, providerOf } from "@/lib/providers";
 
 export type ChatRole = "user" | "assistant";
 
@@ -115,7 +109,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         return true;
       };
 
-
       const userText =
         typeof userMsg.content === "string"
           ? userMsg.content
@@ -128,8 +121,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
           ? 0
           : userMsg.content.filter((p) => p.type === "image_url").length;
 
-      const wantImage =
-        forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
+      const wantImage = forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
 
       // ---- Image generation branch ----
       if (wantImage) {
@@ -270,9 +262,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
                 assistantText += delta;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantId
-                      ? { ...m, content: assistantText, pending: false }
-                      : m,
+                    m.id === assistantId ? { ...m, content: assistantText, pending: false } : m,
                   ),
                 );
               }
@@ -296,9 +286,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
                 assistantText += delta;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantId
-                      ? { ...m, content: assistantText, pending: false }
-                      : m,
+                    m.id === assistantId ? { ...m, content: assistantText, pending: false } : m,
                   ),
                 );
               }
@@ -311,9 +299,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         if (!assistantText) {
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: "(no response)", pending: false }
-                : m,
+              m.id === assistantId ? { ...m, content: "(no response)", pending: false } : m,
             ),
           );
         }
@@ -351,7 +337,6 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             });
           }
         }
-
       } finally {
         setIsStreaming(false);
         abortRef.current = null;
@@ -361,10 +346,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
   );
 
   const send = useCallback(
-    async (
-      input: string,
-      opts: { images?: string[]; model: string; forceImage?: boolean },
-    ) => {
+    async (input: string, opts: { images?: string[]; model: string; forceImage?: boolean }) => {
       const text = input.trim();
       const { images = [], model, forceImage } = opts;
       if (!text && images.length === 0) return;

@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X, PanelLeftClose, PanelLeft } from "lucide-react";
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  Pencil,
+  Check,
+  X,
+  PanelLeftClose,
+  PanelLeft,
+} from "lucide-react";
 import type { Conversation } from "@/hooks/useConversations";
 
 interface Props {

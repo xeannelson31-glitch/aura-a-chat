@@ -8,8 +8,7 @@
 //   "zai/<m>"            → Z.ai OpenAI-compat (ZAI_API_KEY)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -70,9 +69,7 @@ function resolveProvider(modelId: string): ProviderRoute {
     };
   }
   // Default to Lovable AI Gateway
-  const safe = LOVABLE_TEXT_MODELS.has(modelId)
-    ? modelId
-    : "google/gemini-3-flash-preview";
+  const safe = LOVABLE_TEXT_MODELS.has(modelId) ? modelId : "google/gemini-3-flash-preview";
   return {
     url: "https://ai.gateway.lovable.dev/v1/chat/completions",
     apiKey: lovableKey,
@@ -83,8 +80,7 @@ function resolveProvider(modelId: string): ProviderRoute {
 
 function errorBody(status: number, fallback: string) {
   if (status === 429) return "Rate limit exceeded. Please try again shortly.";
-  if (status === 402)
-    return "AI credits exhausted. Please add funds to your workspace.";
+  if (status === 402) return "AI credits exhausted. Please add funds to your workspace.";
   if (status === 401 || status === 403)
     return "Provider rejected the API key. Please check the configured key.";
   return fallback;
@@ -103,11 +99,14 @@ Deno.serve(async (req) => {
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-      const lastUser = [...messages].reverse().find((m: any) => m.role === "user");
+      const lastUser = [...messages].reverse().find((m: { role: string }) => m.role === "user");
       const prompt =
         typeof lastUser?.content === "string"
           ? lastUser.content
-          : (lastUser?.content || []).find((p: any) => p.type === "text")?.text ?? "";
+          : Array.isArray(lastUser?.content)
+            ? (lastUser.content.find((p: { type: string; text?: string }) => p.type === "text")
+                ?.text ?? "")
+            : "";
 
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -133,8 +132,7 @@ Deno.serve(async (req) => {
       }
 
       const data = await resp.json();
-      const imageUrl =
-        data.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url ?? null;
       const text = data.choices?.[0]?.message?.content ?? "";
       return new Response(JSON.stringify({ imageUrl, text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
