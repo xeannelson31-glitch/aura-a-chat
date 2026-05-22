@@ -18,6 +18,8 @@ import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelPicker, TEXT_MODELS } from "@/components/chat/ModelPicker";
+import { ProviderStatus } from "@/components/chat/ProviderStatus";
+
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
 import { exportAsJSON, exportAsMarkdownBundle } from "@/lib/exportChat";
 import logoUrl from "@/assets/aura-logo.webp";
