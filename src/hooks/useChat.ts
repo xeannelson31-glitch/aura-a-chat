@@ -91,14 +91,31 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     setIsStreaming(false);
   }, []);
 
-  // Internal: run a request given an explicit history + user message
+  // Internal: run a request given an explicit history + user message.
+  // `attempted` carries models already tried in this user-initiated request so
+  // automatic provider fallback never repeats a model.
   const runRequest = useCallback(
     async (
       history: ChatMessage[],
       userMsg: ChatMessage,
       opts: { model: string; forceImage?: boolean },
+      attempted: Set<string> = new Set(),
     ) => {
       const { model, forceImage } = opts;
+      attempted.add(model);
+
+      const tryFallback = (status: number | undefined, errMsg: string): boolean => {
+        providerHealth.markFailure(model, status, errMsg);
+        const next = fallbackChain(model).find((m) => !attempted.has(m));
+        if (!next) return false;
+        toast.message(`${modelLabel(model)} unavailable`, {
+          description: `Falling back to ${modelLabel(next)} (${providerOf(next)}).`,
+        });
+        void runRequest(history, userMsg, { ...opts, model: next }, attempted);
+        return true;
+      };
+
+
       const userText =
         typeof userMsg.content === "string"
           ? userMsg.content
