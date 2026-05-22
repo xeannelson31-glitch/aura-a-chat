@@ -1,6 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendlyError";
+import {
+  fallbackChain,
+  modelLabel,
+  providerHealth,
+  providerOf,
+} from "@/lib/providers";
+
 
 export type ChatRole = "user" | "assistant";
 
@@ -84,14 +91,31 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     setIsStreaming(false);
   }, []);
 
-  // Internal: run a request given an explicit history + user message
+  // Internal: run a request given an explicit history + user message.
+  // `attempted` carries models already tried in this user-initiated request so
+  // automatic provider fallback never repeats a model.
   const runRequest = useCallback(
     async (
       history: ChatMessage[],
       userMsg: ChatMessage,
       opts: { model: string; forceImage?: boolean },
+      attempted: Set<string> = new Set(),
     ) => {
       const { model, forceImage } = opts;
+      attempted.add(model);
+
+      const tryFallback = (status: number | undefined, errMsg: string): boolean => {
+        providerHealth.markFailure(model, status, errMsg);
+        const next = fallbackChain(model).find((m) => !attempted.has(m));
+        if (!next) return false;
+        toast.message(`${modelLabel(model)} unavailable`, {
+          description: `Falling back to ${modelLabel(next)} (${providerOf(next)}).`,
+        });
+        void runRequest(history, userMsg, { ...opts, model: next }, attempted);
+        return true;
+      };
+
+
       const userText =
         typeof userMsg.content === "string"
           ? userMsg.content
@@ -146,6 +170,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
           const data = (await resp.json()) as { imageUrl: string | null; text?: string };
           if (!data.imageUrl) throw new Error("No image returned.");
 
+          providerHealth.markSuccess(model);
           setMessages((prev) =>
             prev.map((m) =>
               m.id === placeholderId
@@ -161,11 +186,22 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         } catch (e) {
           const status = (e as { status?: number }).status;
           const msg = friendlyError(e, status);
-          toast.error("Image generation failed", { description: msg });
           setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
+          if (!tryFallback(status, msg)) {
+            toast.error("Image generation failed", {
+              description: msg,
+              action: {
+                label: "Retry",
+                onClick: () => {
+                  void runRequest(history, userMsg, opts);
+                },
+              },
+            });
+          }
         } finally {
           setIsStreaming(false);
         }
+
         return;
       }
 
@@ -281,6 +317,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
             ),
           );
         }
+        providerHealth.markSuccess(model);
       } catch (e: unknown) {
         if ((e as Error).name === "AbortError") {
           // User stopped the stream — keep any partial text, mark not pending.
@@ -298,20 +335,23 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         } else {
           const status = (e as { status?: number }).status;
           const msg = friendlyError(e, status);
-          // Drop the failed/partial assistant message entirely. Retry will
-          // re-run the original request fresh (same history, same user message,
-          // same model + forceImage) and produce a brand-new response.
+          // Drop the failed/partial assistant message entirely. Auto-fallback
+          // (if available) re-runs fresh with the next provider; otherwise we
+          // surface a toast with manual Retry.
           setMessages((prev) => prev.filter((m) => m.id !== assistantId));
-          toast.error("Chat error", {
-            description: msg,
-            action: {
-              label: "Retry",
-              onClick: () => {
-                void runRequest(history, userMsg, opts);
+          if (!tryFallback(status, msg)) {
+            toast.error("Chat error", {
+              description: msg,
+              action: {
+                label: "Retry",
+                onClick: () => {
+                  void runRequest(history, userMsg, opts);
+                },
               },
-            },
-          });
+            });
+          }
         }
+
       } finally {
         setIsStreaming(false);
         abortRef.current = null;

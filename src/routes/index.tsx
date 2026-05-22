@@ -18,6 +18,8 @@ import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ModelPicker, TEXT_MODELS } from "@/components/chat/ModelPicker";
+import { ProviderStatus } from "@/components/chat/ProviderStatus";
+
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
 import { exportAsJSON, exportAsMarkdownBundle } from "@/lib/exportChat";
 import logoUrl from "@/assets/aura-logo.webp";
@@ -242,7 +244,9 @@ function ChatPage() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <ProviderStatus />
               <ModelPicker value={model} onChange={setModel} />
+
 
               <div className="relative" ref={exportRef}>
                 <button
