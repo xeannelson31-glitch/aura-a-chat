@@ -170,6 +170,7 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
           const data = (await resp.json()) as { imageUrl: string | null; text?: string };
           if (!data.imageUrl) throw new Error("No image returned.");
 
+          providerHealth.markSuccess(model);
           setMessages((prev) =>
             prev.map((m) =>
               m.id === placeholderId
@@ -185,11 +186,22 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
         } catch (e) {
           const status = (e as { status?: number }).status;
           const msg = friendlyError(e, status);
-          toast.error("Image generation failed", { description: msg });
           setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
+          if (!tryFallback(status, msg)) {
+            toast.error("Image generation failed", {
+              description: msg,
+              action: {
+                label: "Retry",
+                onClick: () => {
+                  void runRequest(history, userMsg, opts);
+                },
+              },
+            });
+          }
         } finally {
           setIsStreaming(false);
         }
+
         return;
       }
 
