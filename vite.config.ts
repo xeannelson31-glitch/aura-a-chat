@@ -20,8 +20,9 @@ if (process.env.NETLIFY) {
 }
 
 export default defineConfig({
-  cloudflare: (process.env.VERCEL || process.env.NETLIFY) ? false : undefined,
-  plugins
+  // `cloudflare: false` disables the Workers target when building on Vercel/Netlify.
+  ...({ cloudflare: process.env.VERCEL || process.env.NETLIFY ? false : undefined } as object),
+  plugins,
 });
 
 

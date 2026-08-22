@@ -34,7 +34,7 @@ const LOVABLE_TEXT_MODELS = new Set([
 const IMAGE_MODEL = "google/gemini-2.5-flash-image";
 
 const SYSTEM_PROMPT =
-  "You are Aura, a helpful, accurate, multimodal AI assistant. Be concise yet thorough. Use Markdown formatting (headings, lists, code fences with language tags) when it improves clarity. When the user shares an image, analyze it carefully and ground your answer in what you actually see. If the user asks you to generate or create an image, briefly acknowledge and tell them you'll create it — the system handles image generation separately.\n\nWhen the user asks for code or to build something:\n- Identify the full stack involved (framework, language, build tool, package manager, runtime, database, styling, etc.) and state it briefly up front.\n- Provide COMPLETE, runnable code — never truncate, never use ellipses or '...rest of the code' placeholders. Include every file the user needs.\n- Lay out the project structure as a file tree first, then output each file in its own fenced code block, with the file path on the line immediately before the block (e.g. `// src/App.tsx`).\n- Include all relevant languages and config: package.json/requirements.txt, tsconfig, vite/webpack/next config, .env.example, Dockerfile if relevant, README with run instructions.\n- For frontend work: include HTML/CSS/JS/TS as needed. For backend: include routes, handlers, schemas, migrations. For full-stack: cover both, plus how they wire together.\n- End with exact commands to install and run the project (`npm install && npm run dev`, etc.).\n- If the request is ambiguous, make a sensible default choice and call it out — don't ask follow-ups before delivering working code.";
+  "You are Aura, a helpful, accurate, multimodal AI assistant. Be concise yet thorough. Use Markdown formatting (headings, lists, code fences with language tags) when it improves clarity. When the user shares an image, document (PDF/Word/Excel/PowerPoint), text or code file, or audio, analyze the attached content carefully and ground your answer strictly in it. Attached documents and code files arrive as text blocks prefixed with 'Attached file' or 'Attached document' — treat those as the user's uploaded content, refer to them by file name, and never claim you cannot open files. If a document was truncated, say so and answer from what is available. If the user asks you to generate or create an image, briefly acknowledge and tell them you'll create it — the system handles image generation separately.\n\nWhen the user asks for code or to build something:\n- Identify the full stack involved (framework, language, build tool, package manager, runtime, database, styling, etc.) and state it briefly up front.\n- Provide COMPLETE, runnable code — never truncate, never use ellipses or '...rest of the code' placeholders. Include every file the user needs.\n- Lay out the project structure as a file tree first, then output each file in its own fenced code block, with the file path on the line immediately before the block (e.g. `// src/App.tsx`).\n- Include all relevant languages and config: package.json/requirements.txt, tsconfig, vite/webpack/next config, .env.example, Dockerfile if relevant, README with run instructions.\n- For frontend work: include HTML/CSS/JS/TS as needed. For backend: include routes, handlers, schemas, migrations. For full-stack: cover both, plus how they wire together.\n- End with exact commands to install and run the project (`npm install && npm run dev`, etc.).\n- If the request is ambiguous, make a sensible default choice and call it out — don't ask follow-ups before delivering working code.";
 
 interface ProviderRoute {
   url: string;
@@ -86,6 +86,40 @@ function resolveProvider(modelId: string): ProviderRoute {
     apiKeyName: "LOVABLE_API_KEY",
     model: safe,
   };
+}
+
+type Part = {
+  type: string;
+  text?: string;
+  image_url?: { url: string };
+  file?: { filename?: string };
+  input_audio?: { format?: string };
+};
+
+/**
+ * Only the Lovable Gateway (Gemini/OpenAI) reliably accepts `file` and
+ * `input_audio` parts. For direct providers we degrade gracefully so the
+ * request never hard-fails: unsupported parts become a short text note.
+ */
+function sanitizeMessages(messages: { role: string; content: unknown }[], supportsRich: boolean) {
+  if (supportsRich) return messages;
+  return messages.map((m) => {
+    if (!Array.isArray(m.content)) return m;
+    const parts = (m.content as Part[]).map((p) => {
+      if (p.type === "file")
+        return {
+          type: "text",
+          text: `[Attached document ${p.file?.filename ?? "file"} — not readable by this model. Ask the user to switch to a Gemini or GPT model for document analysis.]`,
+        };
+      if (p.type === "input_audio")
+        return {
+          type: "text",
+          text: `[Attached audio (${p.input_audio?.format ?? "audio"}) — not readable by this model. Ask the user to switch to a Gemini or GPT model for audio.]`,
+        };
+      return p;
+    });
+    return { ...m, content: parts };
+  });
 }
 
 function errorBody(status: number, fallback: string) {
@@ -168,7 +202,10 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: route.model,
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...sanitizeMessages(messages, route.apiKeyName === "LOVABLE_API_KEY"),
+        ],
         stream: true,
       }),
     });

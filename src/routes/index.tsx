@@ -12,7 +12,7 @@ import {
   Menu,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
-import { useChat, type ChatMessage } from "@/hooks/useChat";
+import { useChat, type ChatMessage, type ChatPart } from "@/hooks/useChat";
 import { useConversations } from "@/hooks/useConversations";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
@@ -157,8 +157,15 @@ function ChatPage() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [exportOpen]);
 
-  const handleSend = (text: string, opts: { images?: string[]; forceImage?: boolean }) =>
-    send(text, { ...opts, model });
+  const handleSend = (
+    text: string,
+    opts: {
+      images?: string[];
+      parts?: ChatPart[];
+      attachmentNames?: string[];
+      forceImage?: boolean;
+    },
+  ) => send(text, { ...opts, model });
 
   const handleRegenerate = (id: string) => regenerate(id, model);
 

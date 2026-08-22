@@ -7,7 +7,9 @@ export type ChatRole = "user" | "assistant";
 
 export type ChatPart =
   | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
+  | { type: "image_url"; image_url: { url: string } }
+  | { type: "file"; file: { filename: string; file_data: string } }
+  | { type: "input_audio"; input_audio: { data: string; format: string } };
 
 export interface ChatMessage {
   id: string;
@@ -15,6 +17,8 @@ export interface ChatMessage {
   content: string | ChatPart[];
   generatedImage?: string;
   pending?: boolean;
+  /** Display-only names of non-image attachments on a user message */
+  attachmentNames?: string[];
   // Track which model produced this assistant message and whether image was forced
   model?: string;
   forcedImage?: boolean;
@@ -29,14 +33,7 @@ function toGatewayMessages(messages: ChatMessage[]) {
     if (typeof m.content === "string") {
       return { role: m.role, content: m.content };
     }
-    return {
-      role: m.role,
-      content: m.content.map((p) =>
-        p.type === "text"
-          ? { type: "text", text: p.text }
-          : { type: "image_url", image_url: { url: p.image_url.url } },
-      ),
-    };
+    return { role: m.role, content: m.content.map((p) => ({ ...p })) };
   });
 }
 
@@ -92,10 +89,10 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     async (
       history: ChatMessage[],
       userMsg: ChatMessage,
-      opts: { model: string; forceImage?: boolean },
+      opts: { model: string; forceImage?: boolean; noAutoImage?: boolean },
       attempted: Set<string> = new Set(),
     ) => {
-      const { model, forceImage } = opts;
+      const { model, forceImage, noAutoImage } = opts;
       attempted.add(model);
 
       const tryFallback = (status: number | undefined, errMsg: string): boolean => {
@@ -116,12 +113,13 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
               .filter((p) => p.type === "text")
               .map((p) => (p as { text: string }).text)
               .join("\n");
-      const userImageCount =
-        typeof userMsg.content === "string"
-          ? 0
-          : userMsg.content.filter((p) => p.type === "image_url").length;
+      // Any attachment (image, audio, pdf, extracted doc text) means the user
+      // wants an ANSWER about that content — never silently switch to image gen.
+      const hasAttachment =
+        noAutoImage ||
+        (typeof userMsg.content !== "string" && userMsg.content.some((p) => p.type !== "text"));
 
-      const wantImage = forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
+      const wantImage = forceImage || (!hasAttachment && looksLikeImageRequest(userText));
 
       // ---- Image generation branch ----
       if (wantImage) {
@@ -346,22 +344,38 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
   );
 
   const send = useCallback(
-    async (input: string, opts: { images?: string[]; model: string; forceImage?: boolean }) => {
+    async (
+      input: string,
+      opts: {
+        images?: string[];
+        parts?: ChatPart[];
+        attachmentNames?: string[];
+        model: string;
+        forceImage?: boolean;
+      },
+    ) => {
       const text = input.trim();
-      const { images = [], model, forceImage } = opts;
-      if (!text && images.length === 0) return;
+      const { images = [], parts = [], attachmentNames = [], model, forceImage } = opts;
+      if (!text && images.length === 0 && parts.length === 0) return;
 
       const userParts: ChatPart[] = [];
       if (text) userParts.push({ type: "text", text });
       for (const url of images) userParts.push({ type: "image_url", image_url: { url } });
+      userParts.push(...parts);
 
+      const hasAttachments = images.length > 0 || parts.length > 0;
       const userMsg: ChatMessage = {
         id: uid(),
         role: "user",
-        content: images.length > 0 ? userParts : text,
+        content: hasAttachments ? userParts : text,
+        attachmentNames: attachmentNames.length ? attachmentNames : undefined,
       };
 
-      await runRequest(messagesRef.current, userMsg, { model, forceImage });
+      await runRequest(messagesRef.current, userMsg, {
+        model,
+        forceImage,
+        noAutoImage: hasAttachments && !forceImage,
+      });
     },
     [runRequest],
   );
