@@ -17,6 +17,8 @@ export interface ChatMessage {
   content: string | ChatPart[];
   generatedImage?: string;
   pending?: boolean;
+  /** Display-only names of non-image attachments on a user message */
+  attachmentNames?: string[];
   // Track which model produced this assistant message and whether image was forced
   model?: string;
   forcedImage?: boolean;
