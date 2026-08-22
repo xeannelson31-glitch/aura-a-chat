@@ -111,12 +111,12 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
               .filter((p) => p.type === "text")
               .map((p) => (p as { text: string }).text)
               .join("\n");
-      const userImageCount =
-        typeof userMsg.content === "string"
-          ? 0
-          : userMsg.content.filter((p) => p.type === "image_url").length;
+      // Any attachment (image, audio, pdf, extracted doc text) means the user
+      // wants an ANSWER about that content — never silently switch to image gen.
+      const hasAttachment =
+        typeof userMsg.content !== "string" && userMsg.content.some((p) => p.type !== "text");
 
-      const wantImage = forceImage || (userImageCount === 0 && looksLikeImageRequest(userText));
+      const wantImage = forceImage || (!hasAttachment && looksLikeImageRequest(userText));
 
       // ---- Image generation branch ----
       if (wantImage) {
