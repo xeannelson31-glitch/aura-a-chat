@@ -114,7 +114,8 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
       // Any attachment (image, audio, pdf, extracted doc text) means the user
       // wants an ANSWER about that content — never silently switch to image gen.
       const hasAttachment =
-        typeof userMsg.content !== "string" && userMsg.content.some((p) => p.type !== "text");
+        noAutoImage ||
+        (typeof userMsg.content !== "string" && userMsg.content.some((p) => p.type !== "text"));
 
       const wantImage = forceImage || (!hasAttachment && looksLikeImageRequest(userText));
 
