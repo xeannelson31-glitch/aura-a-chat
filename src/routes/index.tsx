@@ -12,7 +12,7 @@ import {
   Menu,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
-import { useChat, type ChatMessage } from "@/hooks/useChat";
+import { useChat, type ChatMessage, type ChatPart } from "@/hooks/useChat";
 import { useConversations } from "@/hooks/useConversations";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { MessageBubble } from "@/components/chat/MessageBubble";
