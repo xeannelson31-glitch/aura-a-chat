@@ -74,7 +74,12 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
             typeof message.content === "string"
               ? message.content
               : message.content
-                  .filter((p) => p.type === "text")
+                  .filter(
+                    (p) =>
+                      p.type === "text" &&
+                      // hide synthetic parts carrying extracted file contents
+                      !/^Attached (file|document) `/.test(p.text),
+                  )
                   .map((p) => (p as { text: string }).text)
                   .join("\n");
 
