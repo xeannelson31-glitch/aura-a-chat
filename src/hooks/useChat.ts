@@ -87,10 +87,10 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
     async (
       history: ChatMessage[],
       userMsg: ChatMessage,
-      opts: { model: string; forceImage?: boolean },
+      opts: { model: string; forceImage?: boolean; noAutoImage?: boolean },
       attempted: Set<string> = new Set(),
     ) => {
-      const { model, forceImage } = opts;
+      const { model, forceImage, noAutoImage } = opts;
       attempted.add(model);
 
       const tryFallback = (status: number | undefined, errMsg: string): boolean => {
