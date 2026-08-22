@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { RotateCcw, User } from "lucide-react";
+import { Paperclip, RotateCcw, User } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChat";
 import { modelLabel, providerOf } from "@/lib/providers";
 import logoUrl from "@/assets/aura-logo.webp";
