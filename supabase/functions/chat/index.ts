@@ -202,7 +202,10 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: route.model,
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...sanitizeMessages(messages, route.apiKeyName === "LOVABLE_API_KEY"),
+        ],
         stream: true,
       }),
     });
