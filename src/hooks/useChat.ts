@@ -31,14 +31,7 @@ function toGatewayMessages(messages: ChatMessage[]) {
     if (typeof m.content === "string") {
       return { role: m.role, content: m.content };
     }
-    return {
-      role: m.role,
-      content: m.content.map((p) =>
-        p.type === "text"
-          ? { type: "text", text: p.text }
-          : { type: "image_url", image_url: { url: p.image_url.url } },
-      ),
-    };
+    return { role: m.role, content: m.content.map((p) => ({ ...p })) };
   });
 }
 
