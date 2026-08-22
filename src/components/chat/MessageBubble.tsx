@@ -53,6 +53,21 @@ export function MessageBubble({ message, onRegenerate, canRegenerate }: Props) {
           </div>
         )}
 
+        {/* User non-image attachments */}
+        {isUser && message.attachmentNames && message.attachmentNames.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1.5">
+            {message.attachmentNames.map((name, i) => (
+              <span
+                key={i}
+                className="flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-secondary/60 px-2 py-1 text-[11px] text-foreground/90"
+              >
+                <Paperclip className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+                <span className="truncate">{name}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Bubble */}
         {(() => {
           const text =
