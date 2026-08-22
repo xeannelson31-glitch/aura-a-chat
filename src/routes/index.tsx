@@ -157,8 +157,15 @@ function ChatPage() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [exportOpen]);
 
-  const handleSend = (text: string, opts: { images?: string[]; forceImage?: boolean }) =>
-    send(text, { ...opts, model });
+  const handleSend = (
+    text: string,
+    opts: {
+      images?: string[];
+      parts?: ChatPart[];
+      attachmentNames?: string[];
+      forceImage?: boolean;
+    },
+  ) => send(text, { ...opts, model });
 
   const handleRegenerate = (id: string) => regenerate(id, model);
 
