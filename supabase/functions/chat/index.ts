@@ -88,6 +88,40 @@ function resolveProvider(modelId: string): ProviderRoute {
   };
 }
 
+type Part = {
+  type: string;
+  text?: string;
+  image_url?: { url: string };
+  file?: { filename?: string };
+  input_audio?: { format?: string };
+};
+
+/**
+ * Only the Lovable Gateway (Gemini/OpenAI) reliably accepts `file` and
+ * `input_audio` parts. For direct providers we degrade gracefully so the
+ * request never hard-fails: unsupported parts become a short text note.
+ */
+function sanitizeMessages(messages: { role: string; content: unknown }[], supportsRich: boolean) {
+  if (supportsRich) return messages;
+  return messages.map((m) => {
+    if (!Array.isArray(m.content)) return m;
+    const parts = (m.content as Part[]).map((p) => {
+      if (p.type === "file")
+        return {
+          type: "text",
+          text: `[Attached document ${p.file?.filename ?? "file"} — not readable by this model. Ask the user to switch to a Gemini or GPT model for document analysis.]`,
+        };
+      if (p.type === "input_audio")
+        return {
+          type: "text",
+          text: `[Attached audio (${p.input_audio?.format ?? "audio"}) — not readable by this model. Ask the user to switch to a Gemini or GPT model for audio.]`,
+        };
+      return p;
+    });
+    return { ...m, content: parts };
+  });
+}
+
 function errorBody(status: number, fallback: string) {
   if (status === 429) return "Rate limit exceeded. Please try again shortly.";
   if (status === 402) return "AI credits exhausted. Please add funds to your workspace.";
