@@ -342,22 +342,38 @@ export function useChat({ messages, setMessages }: UseChatArgs) {
   );
 
   const send = useCallback(
-    async (input: string, opts: { images?: string[]; model: string; forceImage?: boolean }) => {
+    async (
+      input: string,
+      opts: {
+        images?: string[];
+        parts?: ChatPart[];
+        attachmentNames?: string[];
+        model: string;
+        forceImage?: boolean;
+      },
+    ) => {
       const text = input.trim();
-      const { images = [], model, forceImage } = opts;
-      if (!text && images.length === 0) return;
+      const { images = [], parts = [], attachmentNames = [], model, forceImage } = opts;
+      if (!text && images.length === 0 && parts.length === 0) return;
 
       const userParts: ChatPart[] = [];
       if (text) userParts.push({ type: "text", text });
       for (const url of images) userParts.push({ type: "image_url", image_url: { url } });
+      userParts.push(...parts);
 
+      const hasAttachments = images.length > 0 || parts.length > 0;
       const userMsg: ChatMessage = {
         id: uid(),
         role: "user",
-        content: images.length > 0 ? userParts : text,
+        content: hasAttachments ? userParts : text,
+        attachmentNames: attachmentNames.length ? attachmentNames : undefined,
       };
 
-      await runRequest(messagesRef.current, userMsg, { model, forceImage });
+      await runRequest(messagesRef.current, userMsg, {
+        model,
+        forceImage,
+        noAutoImage: hasAttachments && !forceImage,
+      });
     },
     [runRequest],
   );
