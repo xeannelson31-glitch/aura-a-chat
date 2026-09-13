@@ -32,16 +32,16 @@ export const TEXT_MODELS: readonly ModelOption[] = [
   { id: "openai/gpt-5.2", name: "GPT-5.2", hint: "Enhanced reasoning", group: "Lovable AI" },
 
   // Groq (direct, GROQ_API_KEY)
-  { id: "groq/llama-3.3-70b-versatile", name: "Llama 3.3 70B", hint: "Groq · Fast", group: "Groq" },
   {
-    id: "groq/llama-3.1-8b-instant",
-    name: "Llama 3.1 8B",
-    hint: "Groq · Ultra-fast",
+    id: "groq/openai/gpt-oss-120b",
+    name: "GPT-OSS 120B",
+    hint: "Groq · Powerful",
     group: "Groq",
   },
-  { id: "groq/openai/gpt-oss-20b", name: "GPT-OSS 20B", hint: "Groq · Open", group: "Groq" },
+  { id: "groq/openai/gpt-oss-20b", name: "GPT-OSS 20B", hint: "Groq · Fast", group: "Groq" },
+  { id: "groq/qwen/qwen3.8-27b", name: "Qwen 3.8 27B", hint: "Groq · Balanced", group: "Groq" },
 
-  // OpenAI (direct, OPENAI_API_KEY)
+  // OpenAI (direct, OPENAI_API_KEY — needs billing credits on that account)
   { id: "openai-direct/gpt-4o", name: "GPT-4o", hint: "OpenAI direct", group: "OpenAI" },
   {
     id: "openai-direct/gpt-4o-mini",
@@ -58,15 +58,15 @@ export const TEXT_MODELS: readonly ModelOption[] = [
     group: "Gemini",
   },
   {
-    id: "gemini-direct/gemini-2.5-pro",
-    name: "Gemini 2.5 Pro (direct)",
+    id: "gemini-direct/gemini-flash-latest",
+    name: "Gemini Flash Latest (direct)",
     hint: "Google direct",
     group: "Gemini",
   },
 
-  // Z.ai (direct, ZAI_API_KEY)
-  { id: "zai/glm-4.5", name: "GLM-4.5", hint: "Z.ai · Reasoning", group: "Z.ai" },
-  { id: "zai/glm-4-flash", name: "GLM-4 Flash", hint: "Z.ai · Fast", group: "Z.ai" },
+  // Z.ai (direct, ZAI_API_KEY — needs balance on that account)
+  { id: "zai/glm-4.6", name: "GLM-4.6", hint: "Z.ai · Reasoning", group: "Z.ai" },
+  { id: "zai/glm-4.5-air", name: "GLM-4.5 Air", hint: "Z.ai · Fast", group: "Z.ai" },
 ] as const;
 
 const GROUPS = ["Lovable AI", "Groq", "OpenAI", "Gemini", "Z.ai"] as const;
