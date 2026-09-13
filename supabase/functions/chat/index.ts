@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
       const t = await response.text().catch(() => "");
       console.error("Provider error:", route.url, response.status, t);
       return new Response(
-        JSON.stringify({ error: errorBody(response.status, "AI provider error.") }),
+        JSON.stringify({ error: errorBody(response.status, "AI provider error."), raw: t.slice(0, 500) }),
         {
           status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
