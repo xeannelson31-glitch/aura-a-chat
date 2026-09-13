@@ -177,7 +177,7 @@ Deno.serve(async (req: Request) => {
         const text = await resp.text();
         console.error("Image gen error:", status, text);
         return new Response(
-          JSON.stringify({ error: errorBody(status, "Image generation failed.") }),
+          JSON.stringify({ error: errorBody(status, "Image generation failed.", text) }),
           { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
