@@ -122,11 +122,17 @@ function sanitizeMessages(messages: { role: string; content: unknown }[], suppor
   });
 }
 
-function errorBody(status: number, fallback: string) {
+function errorBody(status: number, fallback: string, raw = "") {
+  const r = raw.toLowerCase();
+  if (/no credits|insufficient balance|insufficient_quota|exceeded your current quota|recharge|billing/.test(r))
+    return "This provider's account has no remaining credits/balance. Add funds to that provider account, or pick another model.";
+  if (/no longer available|not found|does not exist|decommissioned/.test(r))
+    return "This model is no longer offered by the provider. Please pick another model.";
   if (status === 429) return "Rate limit exceeded. Please try again shortly.";
   if (status === 402) return "AI credits exhausted. Please add funds to your workspace.";
   if (status === 401 || status === 403)
     return "Provider rejected the API key. Please check the configured key.";
+  if (status === 503) return "The model is temporarily overloaded. Please try again shortly.";
   return fallback;
 }
 
@@ -137,6 +143,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { messages, model, mode } = await req.json();
+
 
     // ---- Image generation mode (Lovable Gateway only) ----
     if (mode === "image") {
@@ -170,7 +177,7 @@ Deno.serve(async (req: Request) => {
         const text = await resp.text();
         console.error("Image gen error:", status, text);
         return new Response(
-          JSON.stringify({ error: errorBody(status, "Image generation failed.") }),
+          JSON.stringify({ error: errorBody(status, "Image generation failed.", text) }),
           { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
@@ -214,7 +221,7 @@ Deno.serve(async (req: Request) => {
       const t = await response.text().catch(() => "");
       console.error("Provider error:", route.url, response.status, t);
       return new Response(
-        JSON.stringify({ error: errorBody(response.status, "AI provider error.") }),
+        JSON.stringify({ error: errorBody(response.status, "AI provider error.", t) }),
         {
           status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
