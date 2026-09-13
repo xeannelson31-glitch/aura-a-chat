@@ -42,11 +42,11 @@ export const TEXT_MODELS: readonly ModelOption[] = [
   { id: "groq/qwen/qwen3.8-27b", name: "Qwen 3.8 27B", hint: "Groq · Balanced", group: "Groq" },
 
   // OpenAI (direct, OPENAI_API_KEY — needs billing credits on that account)
-  { id: "openai-direct/gpt-4o", name: "GPT-4o", hint: "OpenAI direct", group: "OpenAI" },
+  { id: "openai-direct/gpt-4o", name: "GPT-4o", hint: "OpenAI direct · needs account credits", group: "OpenAI" },
   {
     id: "openai-direct/gpt-4o-mini",
     name: "GPT-4o Mini",
-    hint: "OpenAI direct · Fast",
+    hint: "OpenAI direct · needs account credits",
     group: "OpenAI",
   },
 
@@ -65,8 +65,8 @@ export const TEXT_MODELS: readonly ModelOption[] = [
   },
 
   // Z.ai (direct, ZAI_API_KEY — needs balance on that account)
-  { id: "zai/glm-4.6", name: "GLM-4.6", hint: "Z.ai · Reasoning", group: "Z.ai" },
-  { id: "zai/glm-4.5-air", name: "GLM-4.5 Air", hint: "Z.ai · Fast", group: "Z.ai" },
+  { id: "zai/glm-4.6", name: "GLM-4.6", hint: "Z.ai · needs account balance", group: "Z.ai" },
+  { id: "zai/glm-4.5-air", name: "GLM-4.5 Air", hint: "Z.ai · needs account balance", group: "Z.ai" },
 ] as const;
 
 const GROUPS = ["Lovable AI", "Groq", "OpenAI", "Gemini", "Z.ai"] as const;
