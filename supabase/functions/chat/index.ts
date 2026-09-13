@@ -144,15 +144,6 @@ Deno.serve(async (req: Request) => {
   try {
     const { messages, model, mode } = await req.json();
 
-    if (mode === "diag") {
-      const r = resolveProvider(model || "");
-      const base = r.url.replace(/\/chat\/completions$/, "/models");
-      const resp = await fetch(base, { headers: { Authorization: `Bearer ${r.apiKey}` } });
-      const text = await resp.text();
-      return new Response(JSON.stringify({ status: resp.status, text: text.slice(0, 4000) }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // ---- Image generation mode (Lovable Gateway only) ----
     if (mode === "image") {
